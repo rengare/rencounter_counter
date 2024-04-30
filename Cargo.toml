@@ -1,0 +1,19 @@
+[package]
+name = "rencounter_counter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ocrs = "0.6.0"
+anyhow = "1.0.80"
+rayon = "1.7.0"
+rten = { version = "0.8.0" }
+rten-imageproc = { version = "0.8.0" }
+rten-tensor = { version = "0.8.0" }
+rten-imageio = { version = "0.8.0" }
+fastrand = "1.9.0"
+lexopt = "0.3.0"
+regex = "1.10.4"
+scrap = "0.5.0"
