@@ -128,10 +128,10 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let mut rgba = DynamicImage::ImageRgba8(img).crop(150, 50, w as u32, (h / 2 - 150) as u32);
-        // .grayscale();
+        let rgba = DynamicImage::ImageRgba8(img)
+            .crop(150, 50, w as u32, (h / 2 - 150) as u32)
+            .grayscale();
 
-        rgba.invert();
         rgba.brighten(250);
         rgba.save(path)?;
 
