@@ -24,11 +24,10 @@ use ratatui::{
 use rten::Model;
 use std::error::Error;
 use std::fs;
-use std::path::PathBuf;
 
 fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
-    let detection_model_data = read_file("text-detection.rten")?;
-    let rec_model_data = read_file("text-recognition.rten")?;
+    let detection_model_data = fs::read("text-detection.rten")?;
+    let rec_model_data = fs::read("text-recognition.rten")?;
     let detection_model = Model::load(&detection_model_data)?;
     let recognition_model = Model::load(&rec_model_data)?;
 
@@ -39,12 +38,6 @@ fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
     })?;
 
     Ok(engine)
-}
-
-fn read_file(path: &str) -> Result<Vec<u8>, std::io::Error> {
-    let mut abs_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    abs_path.push(path);
-    fs::read(abs_path)
 }
 
 #[derive()]

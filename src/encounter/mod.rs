@@ -116,7 +116,17 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
         };
 
         let mut bitflipped = Vec::with_capacity(w * h * 4);
-        let stride = buffer.len() / h;
+        let mut stride = 0;
+
+        #[cfg(target_os = "macos")]
+        {
+            stride = w * 4;
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            stride = buffer.len() / h;
+        }
 
         for y in 0..h {
             for x in 0..w {
