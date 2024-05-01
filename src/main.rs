@@ -4,43 +4,31 @@ extern crate rten_imageio;
 extern crate rten_tensor;
 extern crate scrap;
 
-use image::*;
-use imageproc::*;
-use ocrs::{OcrEngine, OcrEngineParams};
-use regex::Regex;
-use rten::Model;
-// use rten_imageio::write_image;
-use scrap::{Capturer, Display};
-use std::error::Error;
-use std::io::ErrorKind::WouldBlock;
-use std::thread;
-use std::time::Duration;
+mod encounter;
+mod tui;
 
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use encounter::{encounter_process, load_state, EncounterState, Mode};
+use ocrs::{OcrEngine, OcrEngineParams};
+use ratatui::{
+    layout::Alignment,
+    prelude::Stylize,
+    symbols::border,
+    text::{Line, Text},
+    widgets::{
+        block::{Position, Title},
+        Block, Borders, Paragraph,
+    },
+    Frame,
+};
+use rten::Model;
+use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
-use rten_imageio::read_image;
-use rten_tensor::prelude::*;
-
-struct Args {
-    image: String,
-}
-
-/// Read a file from a path that is relative to the crate root.
-fn read_file(path: &str) -> Result<Vec<u8>, std::io::Error> {
-    let mut abs_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    abs_path.push(path);
-    fs::read(abs_path)
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args {
-        image: "test.png".to_string(),
-    };
-
+fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
     let detection_model_data = read_file("text-detection.rten")?;
     let rec_model_data = read_file("text-recognition.rten")?;
-
     let detection_model = Model::load(&detection_model_data)?;
     let recognition_model = Model::load(&rec_model_data)?;
 
@@ -50,88 +38,123 @@ fn main() -> Result<(), Box<dyn Error>> {
         ..Default::default()
     })?;
 
-    loop {
-        capture_screen(&args.image)?;
-        //sleep for 1 sec
-        thread::sleep(Duration::from_secs(1));
-
-        let mons = get_mons(&engine, &args.image)?;
-        println!("encountered {:?}", mons);
-    }
+    Ok(engine)
 }
 
-fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let image = read_image(path)?;
-    let ocr_input = engine.prepare_input(image.view())?;
-    let word_rects = engine.detect_words(&ocr_input)?;
-    let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
-    let line_texts = engine.recognize_text(&ocr_input, &line_rects)?;
-
-    let pokemon_regex = Regex::new(r"[0-9\s]").unwrap();
-
-    let mut mons: Vec<String> = vec![];
-    line_texts.iter().for_each(|line| {
-        line.iter()
-            .filter(|l| l.to_string().contains("Lv."))
-            .for_each(|l| {
-                l.words()
-                    .map(|w| w.to_string())
-                    .filter(|w| w.len() > 2 && !pokemon_regex.is_match(w) && !w.contains("Lv."))
-                    .for_each(|w| {
-                        println!("{}", w);
-                        mons.push(w);
-                    });
-            });
-    });
-    Ok(mons)
+fn read_file(path: &str) -> Result<Vec<u8>, std::io::Error> {
+    let mut abs_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    abs_path.push(path);
+    fs::read(abs_path)
 }
 
-fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
-    let one_second = Duration::new(1, 0);
-    let one_frame = one_second / 60;
+#[derive()]
+pub struct App {
+    exit: bool,
+    encounter_state: EncounterState,
+    engine: OcrEngine,
+}
 
-    let display = Display::primary().expect("Couldn't find primary display.");
-    let mut capturer = Capturer::new(display).expect("Couldn't begin capture.");
-    let (w, h) = (capturer.width(), capturer.height());
-
-    loop {
-        // Wait until there's a frame.
-
-        let buffer = match capturer.frame() {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                if error.kind() == WouldBlock {
-                    // Keep spinning.
-                    thread::sleep(one_frame);
-                    continue;
-                } else {
-                    panic!("Error: {}", error);
-                }
-            }
+impl App {
+    fn new() -> Self {
+        let mut t = Self {
+            exit: false,
+            encounter_state: EncounterState::default(),
+            engine: load_engine().unwrap(),
         };
+        if let Ok(loaded) = load_state() {
+            t.encounter_state = loaded;
+            t.encounter_state.mode = Mode::Init;
+        };
+        t
+    }
 
-        // Flip the ARGB image into a BGRA image.
+    fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
+        loop {
+            terminal.draw(|frame| self.render_frame(frame))?;
+            encounter_process(&self.engine, &mut self.encounter_state)?;
 
-        let mut bitflipped = Vec::with_capacity(w * h * 4);
-        let stride = buffer.len() / h;
+            if self.exit {
+                break;
+            }
 
-        for y in 0..h {
-            for x in 0..w {
-                let i = stride * y + 4 * x;
-                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i], 255]);
+            if event::poll(std::time::Duration::from_millis(16))? {
+                match event::read()? {
+                    Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
+                        self.handle_key_event(key_event)
+                    }
+                    _ => {}
+                };
             }
         }
-
-        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
-            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
-
-        let mut rgba = DynamicImage::ImageRgba8(img).crop(150, 50, w as u32, (h / 2 - 150) as u32);
-        // .grayscale();
-
-        rgba.invert();
-        rgba.brighten(250);
-        rgba.save(path)?;
-
-        return Ok(());
+        Ok(())
     }
+
+    fn exit(&mut self) {
+        self.exit = true;
+    }
+
+    fn render_frame(&self, frame: &mut Frame) {
+        let title = Title::from("Rencounter Counter".bold());
+
+        let instructions = Title::from(Line::from(vec![
+            " Start ".into(),
+            " <S> ".blue().bold(),
+            " Pause ".into(),
+            " <P> ".blue().bold(),
+            " Reset ".into(),
+            " <R> ".blue().bold(),
+            " Quit ".into(),
+            " <Q> ".blue().bold(),
+        ]));
+
+        let block = Block::default()
+            .title(title.alignment(Alignment::Center))
+            .title(
+                instructions
+                    .alignment(Alignment::Center)
+                    .position(Position::Bottom),
+            )
+            .borders(Borders::ALL)
+            .border_set(border::THICK);
+
+        let text = Text::from(vec![
+            Line::from("Encounter number").centered(),
+            Line::from(format!("{}", self.encounter_state.encounters)).centered(),
+            Line::from("Last encounter").centered(),
+            Line::from(format!("{:?}", self.encounter_state.last_encounter)).centered(),
+            Line::from("Mode").centered(),
+            Line::from(format!("{}", self.encounter_state.mode)).centered(),
+        ]);
+
+        frame.render_widget(Paragraph::new(text).block(block), frame.size());
+    }
+
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('s') => self.encounter_state.mode = Mode::Walk,
+            KeyCode::Char('p') => self.encounter_state.mode = Mode::Pause,
+            KeyCode::Char('r') => self.encounter_state = EncounterState::default(),
+            _ => {}
+        }
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut terminal = tui::init()?;
+    terminal.clear()?;
+
+    let mut app = App::default();
+    app.run(&mut terminal)?;
+
+    tui::restore()?;
+    terminal.clear()?;
+
+    Ok(())
 }

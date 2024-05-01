@@ -19,4 +19,7 @@ regex = "1.10.4"
 scrap = "0.5.0"
 image = "0.25.1"
 repng = "0.2.2"
-imageproc = "0.24.0"
+serde_json = "1.0.116"
+serde = {version = "1.0.199", features = ["derive"]}
+ratatui = "0.26.2"
+crossterm = "0.27.0"
