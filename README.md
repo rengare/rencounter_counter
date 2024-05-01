@@ -37,8 +37,8 @@ It is a simple tool to keep track of the number of encounters in the game.
 2. Install Rust language from [here](https://www.rust-lang.org/tools/install) 
 3. Run the following command in the terminal
 ```bash
-git clone github.com/rengare/rencounter-counter
-cd rencounter-counter
+git clone github.com/rengare/rencounter_counter
+cd rencounter_counter
 cargo run --release
 ```
 
