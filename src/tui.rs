@@ -1,6 +1,6 @@
 use std::io::{self, stdout, Stdout};
 
-use crossterm::{execute, terminal::*};
+use crossterm::terminal::*;
 use ratatui::prelude::*;
 
 /// A type alias for the terminal type used in this application

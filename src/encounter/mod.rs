@@ -12,7 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 const CAPTURED_SCREEN_PATH: &str = "test.png";
-const SLEEP_TIME_MS: u64 = 500;
+const SLEEP_TIME_MS: u64 = 200;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -150,12 +150,12 @@ pub fn encounter_process(
     let mut mode_detect: Vec<Vec<String>> = vec![];
     let mut mons: Vec<String> = vec![];
     if state.mode != Mode::Pause {
-        for _ in 0..1 {
+        for _ in 0..2 {
             capture_screen(CAPTURED_SCREEN_PATH)?;
             mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
+            thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
             mode_detect.push(mons.clone());
         }
-        thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }
 
     match state.mode {
