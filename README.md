@@ -15,6 +15,20 @@ It is a simple tool to keep track of the number of encounters in the game.
 ## How to use
 [![Watch the video](https://img.youtube.com/vi/zjVu3N2xFzA/0.jpg)](https://www.youtube.com/watch?v=zjVu3N2xFzA)
 
+### Linux
+- open terminal
+- go to the directory of app
+- run the following command
+```bash
+./rencounter_counter_linux
+```
+### Mac
+- double click on the app
+- hit s 
+- mac will ask you to give terminal permissions to take screenshots
+- hit ok
+- close terminal and run app again
+
 ## How to install
 
 (stand alone app available soon)
