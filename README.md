@@ -13,7 +13,7 @@ It is a simple tool to keep track of the number of encounters in the game.
 
 
 ## How to use
-<iframe width="802" height="480" src="https://www.youtube.com/embed/zjVu3N2xFzA" title="Rencounter counter" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Watch the video](https://img.youtube.com/vi/zjVu3N2xFzA/0.jpg)](https://www.youtube.com/watch?v=zjVu3N2xFzA)
 
 ## How to install
 
