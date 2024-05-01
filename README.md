@@ -34,4 +34,5 @@ cargo run --release
 - [ ] Show top 5 mons with the most encounters
 - [ ] Retrain AI model with Pokemmo fonts or use different fonts that work better with the current model
 - [ ] Test on Windows and Mac(pre M1 and post)
+- [ ] Detect when the game is covered by another app and pause the counter
 
