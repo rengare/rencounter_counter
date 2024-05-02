@@ -5,6 +5,7 @@ use rten_imageio::read_image;
 use rten_tensor::prelude::*;
 use scrap::{Capturer, Display};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::io::ErrorKind::WouldBlock;
@@ -40,6 +41,7 @@ pub struct EncounterState {
     pub encounters: u32,
     pub last_encounter: Vec<String>,
     pub mode: Mode,
+    pub mon_stats: HashMap<String, u32>,
 }
 
 impl Default for EncounterState {
@@ -48,6 +50,7 @@ impl Default for EncounterState {
             encounters: 0,
             last_encounter: vec![],
             mode: Mode::Init,
+            mon_stats: HashMap::new(),
         }
     }
 }
@@ -141,7 +144,7 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let mut rgba = DynamicImage::ImageRgba8(img)
+        let rgba = DynamicImage::ImageRgba8(img)
             .crop(150, 50, w as u32, (h / 2 - 150) as u32)
             .grayscale();
 
@@ -179,10 +182,22 @@ pub fn encounter_process(
         }
         Mode::Walk => {
             if mode_detect.iter().any(|m| !m.is_empty()) {
-                let mons = mode_detect.iter().find(|m| !m.is_empty()).unwrap().clone();
+                let mut mons: Vec<String> = vec![];
+
+                for m in mode_detect.iter() {
+                    if !m.is_empty() && m.len() >= mons.len() {
+                        mons = m.clone();
+                    }
+                }
+
                 state.encounters += mons.len() as u32;
-                state.last_encounter = mons;
+                state.last_encounter = mons.clone();
                 state.mode = Mode::Encounter;
+                // count unique encounters
+                mons.iter().for_each(|m| {
+                    let count = state.mon_stats.entry(m.clone()).or_insert(0);
+                    *count += 1;
+                });
             }
         }
         _ => {}

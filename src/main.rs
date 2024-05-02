@@ -14,7 +14,7 @@ use ratatui::{
     layout::Alignment,
     prelude::Stylize,
     symbols::border,
-    text::{Line, Text},
+    text::Line,
     widgets::{
         block::{Position, Title},
         Block, Borders, Paragraph,
@@ -110,16 +110,45 @@ impl App {
             .borders(Borders::ALL)
             .border_set(border::THICK);
 
-        let text = Text::from(vec![
+        // top 5 encountered pokemon
+
+        let mut top_five = self
+            .encounter_state
+            .mon_stats
+            .iter()
+            .collect::<Vec<(&String, &u32)>>();
+
+        top_five.sort_by(|a, b| Ord::cmp(&b.1, &a.1));
+
+        let mut texts = vec![
             Line::from("Encounter number").centered(),
             Line::from(format!("{}", self.encounter_state.encounters)).centered(),
+            Line::from("").centered(),
             Line::from("Last encounter").centered(),
             Line::from(format!("{:?}", self.encounter_state.last_encounter)).centered(),
+            Line::from("").centered(),
             Line::from("Mode").centered(),
             Line::from(format!("{}", self.encounter_state.mode)).centered(),
-        ]);
+            Line::from("").centered(),
+            Line::from("Top 5 encounters").centered(),
+        ];
 
-        frame.render_widget(Paragraph::new(text).block(block), frame.size());
+        for i in 0..5 {
+            if let Some(mon) = top_five.get(i) {
+                texts.push(Line::from(format!("{}: {}", mon.0, mon.1)).centered());
+            }
+        }
+
+        // .map(|(name, count)| format!("{}: {}", name, count))
+        // .collect::<Vec<String>>();
+
+        // let top_five = top_five
+        //     .iter()
+        //     .sorted_by(|a, b| Ord::cmp(&b.1, &a.1))
+        //     .take(5)
+        //     .collect::<Vec<&(String, u32)>>();
+
+        frame.render_widget(Paragraph::new(texts).block(block), frame.size());
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
