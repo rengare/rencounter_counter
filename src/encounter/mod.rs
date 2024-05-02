@@ -161,11 +161,11 @@ pub fn encounter_process(
     }
 
     let mut mode_detect: Vec<Vec<String>> = vec![];
-    let mut mons: Vec<String> = vec![];
+    // let mut mons: Vec<String> = vec![];
     if state.mode != Mode::Pause {
         for _ in 0..2 {
             capture_screen(CAPTURED_SCREEN_PATH)?;
-            mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
+            let mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
             thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
             mode_detect.push(mons.clone());
         }
@@ -178,7 +178,8 @@ pub fn encounter_process(
             }
         }
         Mode::Walk => {
-            if !mons.is_empty() {
+            if mode_detect.iter().any(|m| !m.is_empty()) {
+                let mons = mode_detect.iter().find(|m| !m.is_empty()).unwrap().clone();
                 state.encounters += mons.len() as u32;
                 state.last_encounter = mons;
                 state.mode = Mode::Encounter;
