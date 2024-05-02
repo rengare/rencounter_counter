@@ -12,7 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 const CAPTURED_SCREEN_PATH: &str = "test.png";
-const SLEEP_TIME_MS: u64 = 200;
+const SLEEP_TIME_MS: u64 = 300;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -83,7 +83,10 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
                     .filter(|w| {
                         w.len() > 3
                             && !pokemon_regex.is_match(w)
-                            && (!w.contains("lv.") || !w.contains("llv."))
+                            && (!w.contains("lv.")
+                                || !w.contains("llv.")
+                                || !w.contains("shiny")
+                                || !w.contains("alpha"))
                     })
                     .for_each(|w| {
                         mons.push(w.replace("lv.", "").replace("llv.", "").to_string());
