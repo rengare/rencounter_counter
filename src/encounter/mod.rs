@@ -13,8 +13,8 @@ use std::time::Duration;
 
 const CAPTURED_SCREEN_PATH: &str = "test.png";
 const SLEEP_TIME_MS: u64 = 100;
-const ENCOUNTER_DETECT_FRAMES: i32 = 4;
-const BANNED_WORDS: [&str; 4] = ["lv.", "llv.", "shiny", "alpha"];
+const ENCOUNTER_DETECT_FRAMES: i32 = 3;
+const BANNED_WORDS: [&str; 3] = ["lv.", "llv.", "alpha"];
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -76,7 +76,7 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
     let mut mons: Vec<String> = vec![];
     line_texts.iter().for_each(|line| {
         line.iter()
-            .filter(|l| l.to_string().contains("Lv.") || l.to_string().contains("HP"))
+            .filter(|l| l.to_string().contains("Lv."))
             .for_each(|l| {
                 l.words()
                     .map(|w| w.to_string())
@@ -87,8 +87,9 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
                             && !pokemon_regex.is_match(w)
                             && !BANNED_WORDS.iter().any(|b| w.contains(b))
                     })
+                    .map(|w| w.replace("llv.", ""))
                     .for_each(|w| {
-                        mons.push(w.replace("lv.", "").replace("llv.", "").to_string());
+                        mons.push(w);
                     });
             });
     });
@@ -140,11 +141,11 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let rgba = DynamicImage::ImageRgba8(img)
-            .crop(0, 50, w as u32, (h / 2 - 150) as u32)
+        let mut rgba = DynamicImage::ImageRgba8(img)
+            .crop(150, 50, w as u32, (h / 2 - 150) as u32)
             .grayscale();
 
-        rgba.brighten(250);
+        rgba.brighten(-50);
         rgba.save(path)?;
 
         return Ok(());
