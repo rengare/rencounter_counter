@@ -12,7 +12,9 @@ use std::thread;
 use std::time::Duration;
 
 const CAPTURED_SCREEN_PATH: &str = "test.png";
-const SLEEP_TIME_MS: u64 = 300;
+const SLEEP_TIME_MS: u64 = 100;
+const ENCOUNTER_DETECT_FRAMES: i32 = 4;
+const BANNED_WORDS: [&str; 4] = ["lv.", "llv.", "shiny", "alpha"];
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -25,7 +27,7 @@ pub enum Mode {
 impl std::fmt::Display for Mode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Mode::Init => write!(f, "Init"),
+            Mode::Init => write!(f, "Init, Press S to start."),
             Mode::Encounter => write!(f, "Encounter"),
             Mode::Walk => write!(f, "Walk"),
             Mode::Pause => write!(f, "Pause"),
@@ -74,7 +76,7 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
     let mut mons: Vec<String> = vec![];
     line_texts.iter().for_each(|line| {
         line.iter()
-            .filter(|l| l.to_string().contains("Lv."))
+            .filter(|l| l.to_string().contains("Lv.") || l.to_string().contains("HP"))
             .for_each(|l| {
                 l.words()
                     .map(|w| w.to_string())
@@ -83,10 +85,7 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
                     .filter(|w| {
                         w.len() > 3
                             && !pokemon_regex.is_match(w)
-                            && (!w.contains("lv.")
-                                || !w.contains("llv.")
-                                || !w.contains("shiny")
-                                || !w.contains("alpha"))
+                            && !BANNED_WORDS.iter().any(|b| w.contains(b))
                     })
                     .for_each(|w| {
                         mons.push(w.replace("lv.", "").replace("llv.", "").to_string());
@@ -142,7 +141,7 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
         let rgba = DynamicImage::ImageRgba8(img)
-            .crop(150, 50, w as u32, (h / 2 - 150) as u32)
+            .crop(0, 50, w as u32, (h / 2 - 150) as u32)
             .grayscale();
 
         rgba.brighten(250);
@@ -163,10 +162,10 @@ pub fn encounter_process(
     let mut mode_detect: Vec<Vec<String>> = vec![];
     // let mut mons: Vec<String> = vec![];
     if state.mode != Mode::Pause {
-        for _ in 0..2 {
+        for _ in 1..ENCOUNTER_DETECT_FRAMES {
             capture_screen(CAPTURED_SCREEN_PATH)?;
-            let mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
             thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
+            let mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
             mode_detect.push(mons.clone());
         }
     }
