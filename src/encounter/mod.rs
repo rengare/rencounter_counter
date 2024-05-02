@@ -1,7 +1,6 @@
 use image::{DynamicImage, ImageBuffer, Rgba};
 use ocrs::OcrEngine;
 use regex::Regex;
-use rten_imageio::read_image;
 use rten_tensor::prelude::*;
 use scrap::{Capturer, Display};
 use serde::{Deserialize, Serialize};
@@ -12,9 +11,8 @@ use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::time::Duration;
 
-const CAPTURED_SCREEN_PATH: &str = "test.png";
-const SLEEP_TIME_MS: u64 = 100;
-const ENCOUNTER_DETECT_FRAMES: i32 = 3;
+const SLEEP_TIME_MS: u64 = 400;
+const ENCOUNTER_DETECT_FRAMES: i32 = 4;
 const BANNED_WORDS: [&str; 3] = ["lv.", "llv.", "alpha"];
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,9 +65,32 @@ pub fn save_state(state: &EncounterState) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error>> {
-    let image = read_image(path)?;
-    let ocr_input = engine.prepare_input(image.view())?;
+fn read_tensor_from_buffer(
+    data: DynamicImage,
+) -> Result<rten_tensor::NdTensor<f32, 3>, Box<dyn Error>> {
+    let input_img = data.into_rgb8();
+    let (width, height) = input_img.dimensions();
+    let layout = input_img.sample_layout();
+
+    let chw_tensor = rten_tensor::NdTensorView::from_data_with_strides(
+        [height as usize, width as usize, 3],
+        input_img.as_raw().as_slice(),
+        [
+            layout.height_stride,
+            layout.width_stride,
+            layout.channel_stride,
+        ],
+    )?
+    .permuted([2, 0, 1]) // HWC => CHW
+    .to_tensor() // Make tensor contiguous, which makes `map` faster
+    .map(|x| *x as f32 / 255.); // Rescale from [0, 255] to [0, 1]
+
+    Ok(chw_tensor)
+}
+
+fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<Vec<String>, Box<dyn Error>> {
+    let tensor = read_tensor_from_buffer(data)?;
+    let ocr_input = engine.prepare_input(tensor.view())?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
     let line_texts = engine.recognize_text(&ocr_input, &line_rects)?;
@@ -99,7 +120,7 @@ fn get_mons(engine: &OcrEngine, path: &str) -> Result<Vec<String>, Box<dyn Error
     Ok(mons)
 }
 
-fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
+fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
     let one_second = Duration::new(1, 0);
     let one_frame = one_second / 60;
 
@@ -149,9 +170,8 @@ fn capture_screen(path: &str) -> Result<(), Box<dyn Error>> {
             .grayscale();
 
         rgba.brighten(-50);
-        rgba.save(path)?;
 
-        return Ok(());
+        return Ok(rgba);
     }
 }
 
@@ -164,14 +184,13 @@ pub fn encounter_process(
     }
 
     let mut mode_detect: Vec<Vec<String>> = vec![];
-    // let mut mons: Vec<String> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..ENCOUNTER_DETECT_FRAMES {
-            capture_screen(CAPTURED_SCREEN_PATH)?;
-            thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
-            let mons = get_mons(engine, CAPTURED_SCREEN_PATH)?;
+            let buffer = capture_screen()?;
+            let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons.clone());
         }
+        thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }
 
     match state.mode {
