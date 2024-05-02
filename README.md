@@ -29,10 +29,34 @@ It is a simple tool to keep track of the number of encounters in the game.
 - hit ok
 - close terminal and run app again
 
-## How to install
+## Stand alone app
+If you don't want to install Rust and run the app from the terminal, you can download the stand alone app from the following link
+![Download the app](https://github.com/rengare/rencounter_counter/blob/main/rencounter_counter_linux_windows_macm1.zip)
 
-(stand alone app available soon)
+## How build it from source 
 
+### Linux
+1. Install dependencies
+Ubuntu / Mint / Debian / PopOS
+```bash
+sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
+```
+Fedora / RedHat
+```bash
+sudo dnf install @development-tools gcc gcc-c++ make git libxcb-devel xcb-util-keysyms-devel xcb-util-devel xcb-util-wm-devel
+```
+Arch 
+```bash
+sudo pacman -S base-devel git xcb-util xcb-util-keysyms xcb-util-wm
+```
+
+### Windows
+1. Install Visual Studio 2022 with C++ build tools https://visualstudio.microsoft.com/downloads/
+
+### Mac
+1. Install Xcode from the App Store
+
+### All platforms
 1. Clone the repository
 2. Install Rust language from [here](https://www.rust-lang.org/tools/install) 
 3. Run the following command in the terminal
