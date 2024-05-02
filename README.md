@@ -33,6 +33,12 @@ It is a simple tool to keep track of the number of encounters in the game.
 If you don't want to install Rust and run the app from the terminal, you can download the stand alone app from the following link
 ![Download the app](https://github.com/rengare/rencounter_counter/blob/main/rencounter_counter_linux_windows_macm1.zip)
 
+### Recomendation
+Rencounter grabs a screenshot of your screen, cuts the height in half and take upper half (see picture)
+It is recommended to play the game with 1920x1080 resolution and make the game bigger than half the width. Though you can still play with lower resolution but you need to find a good spot.
+![image](https://github.com/rengare/rencounter_counter/assets/10849982/a32e8c46-824c-4a8f-ae48-856cf479b6e8)
+
+
 ## How build it from source 
 
 ### Linux
@@ -67,10 +73,11 @@ cargo run --release
 ```
 
 ## TODO
-- [ ] Add a stand alone app
+- [x] Add a stand alone app
 - [ ] Save number of encounter per mon
 - [ ] Show top 5 mons with the most encounters
 - [ ] Retrain AI model with Pokemmo fonts or use different fonts that work better with the current model
-- [ ] Test on Windows and Mac(pre M1 and post)
+- [x] Test on Windows and Mac(pre M1 and post)
 - [ ] Detect when the game is covered by another app and pause the counter
+- [ ] Add a way for user to select encounter area on screen
 
