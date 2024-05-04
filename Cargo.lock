@@ -731,14 +731,14 @@ dependencies = [
 [[package]]
 name = "ocrs"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d730843ad91056514776a5f3a830379d73d93c88cf30424301bf9ba54e5b182"
+source = "git+https://github.com/robertknight/ocrs.git#ea67c9e70adf834e8a8632e50845b51fb38b1bc7"
 dependencies = [
  "anyhow",
  "rayon",
  "rten",
  "rten-imageproc",
  "rten-tensor",
+ "thiserror",
  "wasm-bindgen",
 ]
 

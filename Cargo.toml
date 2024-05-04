@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ocrs = "0.6.0"
+ocrs ={ git ="https://github.com/robertknight/ocrs.git"}
 anyhow = "1.0.80"
 rayon = "1.7.0"
 rten = { version = "0.8.0" }

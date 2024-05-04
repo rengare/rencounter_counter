@@ -1,6 +1,5 @@
-use image::{DynamicImage, ImageBuffer, Rgba};
-use ocrs::OcrEngine;
-use rten_tensor::prelude::*;
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
+use ocrs::{ImageSource, OcrEngine};
 use scrap::{Capturer, Display};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 const SLEEP_TIME_MS: u64 = 600;
-const ENCOUNTER_DETECT_FRAMES: i32 = 2;
+// const ENCOUNTER_DETECT_FRAMES: i32 = 3;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -65,32 +64,9 @@ pub fn save_state(state: &EncounterState) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn read_tensor_from_buffer(
-    data: DynamicImage,
-) -> Result<rten_tensor::NdTensor<f32, 3>, Box<dyn Error>> {
-    let input_img = data.into_rgb8();
-    let (width, height) = input_img.dimensions();
-    let layout = input_img.sample_layout();
-
-    let chw_tensor = rten_tensor::NdTensorView::from_data_with_strides(
-        [height as usize, width as usize, 3],
-        input_img.as_raw().as_slice(),
-        [
-            layout.height_stride,
-            layout.width_stride,
-            layout.channel_stride,
-        ],
-    )?
-    .permuted([2, 0, 1]) // HWC => CHW
-    .to_tensor() // Make tensor contiguous, which makes `map` faster
-    .map(|x| *x as f32 / 255.); // Rescale from [0, 255] to [0, 1]
-
-    Ok(chw_tensor)
-}
-
 fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool), Box<dyn Error>> {
-    let tensor = read_tensor_from_buffer(data)?;
-    let ocr_input = engine.prepare_input(tensor.view())?;
+    let source = ImageSource::from_bytes(data.as_bytes(), data.dimensions())?;
+    let ocr_input = engine.prepare_input(source)?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
     let line_texts = engine.recognize_text(&ocr_input, &line_rects)?;
@@ -101,10 +77,9 @@ fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool
     // Process each line, streamlined handling of None values and text processing
     line_texts
         .iter()
-        .filter_map(|line| {
-            line.as_ref()
-                .map(|s| s.to_string().replace("llv.", "lv.").to_lowercase())
-        })
+        .flatten()
+        .filter(|l| l.to_string().len() > 1)
+        .map(|line| line.to_string().replace("llv.", "lv.").to_lowercase())
         .for_each(|l| {
             // Check if 'lure' is in the line
             if l.contains("lure") {
@@ -162,18 +137,19 @@ fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
         for y in 0..h {
             for x in 0..w {
                 let i = stride * y + 4 * x;
-                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i], 255]);
+                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i]]);
             }
         }
 
-        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
+        let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let rgba = DynamicImage::ImageRgba8(img)
+        let rgba = DynamicImage::ImageRgb8(img)
             .crop(0, 50, w as u32, (h / 2 - 100) as u32)
             .grayscale();
 
         rgba.brighten(-50);
+        rgba.save("test.png")?;
 
         return Ok(rgba);
     }
@@ -189,12 +165,12 @@ pub fn encounter_process(
 
     let mut mode_detect: Vec<Vec<String>> = vec![];
     if state.mode != Mode::Pause {
-        for _ in 1..ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen()?;
-            let mons = get_mons(engine, buffer)?;
-            state.lure_on = mons.1;
-            mode_detect.push(mons.0);
-        }
+        // for _ in 1..ENCOUNTER_DETECT_FRAMES {
+        let buffer = capture_screen()?;
+        let mons = get_mons(engine, buffer)?;
+        state.lure_on = mons.1;
+        mode_detect.push(mons.0);
+        // }
         thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }
 
