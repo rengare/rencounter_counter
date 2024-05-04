@@ -1,6 +1,5 @@
 use image::{DynamicImage, ImageBuffer, Rgba};
 use ocrs::OcrEngine;
-use regex::Regex;
 use rten_tensor::prelude::*;
 use scrap::{Capturer, Display};
 use serde::{Deserialize, Serialize};
@@ -11,9 +10,8 @@ use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::time::Duration;
 
-const SLEEP_TIME_MS: u64 = 400;
-const ENCOUNTER_DETECT_FRAMES: i32 = 4;
-const BANNED_WORDS: [&str; 3] = ["lv.", "llv.", "alpha"];
+const SLEEP_TIME_MS: u64 = 600;
+const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -40,6 +38,7 @@ pub struct EncounterState {
     pub last_encounter: Vec<String>,
     pub mode: Mode,
     pub mon_stats: HashMap<String, u32>,
+    pub lure_on: bool,
 }
 
 impl Default for EncounterState {
@@ -49,6 +48,7 @@ impl Default for EncounterState {
             last_encounter: vec![],
             mode: Mode::Init,
             mon_stats: HashMap::new(),
+            lure_on: false,
         }
     }
 }
@@ -88,36 +88,40 @@ fn read_tensor_from_buffer(
     Ok(chw_tensor)
 }
 
-fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<Vec<String>, Box<dyn Error>> {
+fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool), Box<dyn Error>> {
     let tensor = read_tensor_from_buffer(data)?;
     let ocr_input = engine.prepare_input(tensor.view())?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
     let line_texts = engine.recognize_text(&ocr_input, &line_rects)?;
 
-    let pokemon_regex = Regex::new(r"[0-9\s]").unwrap();
-
     let mut mons: Vec<String> = vec![];
-    line_texts.iter().for_each(|line| {
-        line.iter()
-            .filter(|l| l.to_string().contains("Lv."))
-            .for_each(|l| {
-                l.words()
-                    .map(|w| w.to_string())
-                    .filter(|w| w.chars().next().unwrap().is_uppercase())
-                    .map(|w| w.to_lowercase())
-                    .filter(|w| {
-                        w.len() > 3
-                            && !pokemon_regex.is_match(w)
-                            && !BANNED_WORDS.iter().any(|b| w.contains(b))
-                    })
-                    .map(|w| w.replace("llv.", ""))
-                    .for_each(|w| {
-                        mons.push(w);
-                    });
-            });
-    });
-    Ok(mons)
+    let mut lure_on = false;
+
+    // Process each line, streamlined handling of None values and text processing
+    line_texts
+        .iter()
+        .filter_map(|line| {
+            line.as_ref()
+                .map(|s| s.to_string().replace("llv.", "lv.").to_lowercase())
+        })
+        .for_each(|l| {
+            // Check if 'lure' is in the line
+            if l.contains("lure") {
+                lure_on = true;
+            }
+
+            // Process lines containing "lv."
+            if l.contains("lv.") {
+                // Efficiently find and collect monster names without collecting into Vec
+                let words = l.split_whitespace().collect::<Vec<_>>();
+                words.windows(2).filter(|w| w[1] == "lv.").for_each(|w| {
+                    mons.push(w[0].to_string());
+                });
+            }
+        });
+
+    Ok((mons, lure_on))
 }
 
 fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
@@ -166,7 +170,7 @@ fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
         let rgba = DynamicImage::ImageRgba8(img)
-            .crop(150, 50, w as u32, (h / 2 - 150) as u32)
+            .crop(0, 50, w as u32, (h / 2 - 100) as u32)
             .grayscale();
 
         rgba.brighten(-50);
@@ -188,7 +192,8 @@ pub fn encounter_process(
         for _ in 1..ENCOUNTER_DETECT_FRAMES {
             let buffer = capture_screen()?;
             let mons = get_mons(engine, buffer)?;
-            mode_detect.push(mons.clone());
+            state.lure_on = mons.1;
+            mode_detect.push(mons.0);
         }
         thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }

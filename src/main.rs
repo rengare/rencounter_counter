@@ -8,7 +8,7 @@ mod encounter;
 mod tui;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use encounter::{encounter_process, load_state, EncounterState, Mode};
+use encounter::{encounter_process, load_state, save_state, EncounterState, Mode};
 use ocrs::{OcrEngine, OcrEngineParams};
 use ratatui::{
     layout::Alignment,
@@ -127,6 +127,11 @@ impl App {
             Line::from("Last encounter").centered(),
             Line::from(format!("{:?}", self.encounter_state.last_encounter)).centered(),
             Line::from("").centered(),
+            Line::from("Lur").centered(),
+            Line::from(format!("{}", self.encounter_state.lure_on))
+                .yellow()
+                .centered(),
+            Line::from("").centered(),
             Line::from("Mode").centered(),
             Line::from(format!("{}", self.encounter_state.mode)).centered(),
             Line::from("").centered(),
@@ -156,7 +161,10 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('s') => self.encounter_state.mode = Mode::Walk,
             KeyCode::Char('p') => self.encounter_state.mode = Mode::Pause,
-            KeyCode::Char('r') => self.encounter_state = EncounterState::default(),
+            KeyCode::Char('r') => {
+                self.encounter_state = EncounterState::default();
+                save_state(&self.encounter_state).unwrap_or_default();
+            }
             _ => {}
         }
     }
