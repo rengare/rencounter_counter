@@ -22,6 +22,7 @@ use ratatui::{
     Frame,
 };
 use rten::Model;
+use scrap::{Capturer, Display};
 use std::error::Error;
 use std::fs;
 
@@ -62,9 +63,12 @@ impl App {
     }
 
     fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
+        let display = Display::primary().expect("Couldn't find primary display.");
+        let mut capturer = Capturer::new(display).expect("Couldn't begin capture.");
+
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
-            encounter_process(&self.engine, &mut self.encounter_state)?;
+            encounter_process(&self.engine, &mut capturer, &mut self.encounter_state)?;
 
             if self.exit {
                 break;

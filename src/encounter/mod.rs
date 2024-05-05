@@ -1,6 +1,6 @@
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
 use ocrs::{ImageSource, OcrEngine};
-use scrap::{Capturer, Display};
+use scrap::Capturer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
@@ -9,8 +9,8 @@ use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::time::Duration;
 
-const SLEEP_TIME_MS: u64 = 600;
-// const ENCOUNTER_DETECT_FRAMES: i32 = 3;
+const SLEEP_TIME_MS: u64 = 200;
+const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -99,21 +99,15 @@ fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool
     Ok((mons, lure_on))
 }
 
-fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
-    let one_second = Duration::new(1, 0);
-    let one_frame = one_second / 60;
-
-    let display = Display::primary().expect("Couldn't find primary display.");
-    let mut capturer = Capturer::new(display).expect("Couldn't begin capture.");
+fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error>> {
     let (w, h) = (capturer.width(), capturer.height());
 
     loop {
-        let buffer = match capturer.frame() {
+        let buffer = match (*capturer).frame() {
             Ok(buffer) => buffer,
             Err(error) => {
                 if error.kind() == WouldBlock {
                     // Keep spinning.
-                    thread::sleep(one_frame);
                     continue;
                 } else {
                     panic!("Error: {}", error);
@@ -121,7 +115,7 @@ fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
             }
         };
 
-        let mut bitflipped = Vec::with_capacity(w * h * 4);
+        let mut bitflipped = Vec::with_capacity(w * h * 3);
         let mut stride = 0;
 
         #[cfg(target_os = "macos")]
@@ -144,56 +138,59 @@ fn capture_screen() -> Result<DynamicImage, Box<dyn Error>> {
         let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let rgba = DynamicImage::ImageRgb8(img)
+        let img = DynamicImage::ImageRgb8(img)
             .crop(0, 50, w as u32, (h / 2 - 100) as u32)
             .grayscale();
 
-        rgba.brighten(-50);
-        rgba.save("test.png")?;
-
-        return Ok(rgba);
+        return Ok(img);
     }
 }
 
 pub fn encounter_process(
     engine: &OcrEngine,
+    capturer: &mut Capturer,
     state: &mut EncounterState,
 ) -> Result<(), Box<dyn Error>> {
     if state.mode == Mode::Init || state.mode == Mode::Pause {
         return Ok(());
     }
 
-    let mut mode_detect: Vec<Vec<String>> = vec![];
+    let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
-        // for _ in 1..ENCOUNTER_DETECT_FRAMES {
-        let buffer = capture_screen()?;
-        let mons = get_mons(engine, buffer)?;
-        state.lure_on = mons.1;
-        mode_detect.push(mons.0);
-        // }
+        for _ in 1..=ENCOUNTER_DETECT_FRAMES {
+            let buffer = capture_screen(capturer)?;
+            let mons = get_mons(engine, buffer)?;
+            mode_detect.push(mons);
+        }
         thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }
 
     match state.mode {
         Mode::Encounter => {
-            if mode_detect.iter().all(|m| m.is_empty()) {
+            if mode_detect.iter().all(|(m, _)| m.is_empty()) {
                 state.mode = Mode::Walk;
+                if let Some(lure) = mode_detect.first() {
+                    state.lure_on = lure.1;
+                }
             }
         }
         Mode::Walk => {
-            if mode_detect.iter().any(|m| !m.is_empty()) {
+            if mode_detect.iter().any(|(m, _)| !m.is_empty()) {
                 let mut mons: Vec<String> = vec![];
+                let mut is_lure = false;
 
-                for m in mode_detect.iter() {
+                for (m, lure) in mode_detect.iter() {
                     if !m.is_empty() && m.len() >= mons.len() {
                         mons = m.clone();
+                        is_lure = *lure;
                     }
                 }
 
                 state.encounters += mons.len() as u32;
                 state.last_encounter = mons.clone();
                 state.mode = Mode::Encounter;
-                // count unique encounters
+                state.lure_on = is_lure;
+
                 mons.iter().for_each(|m| {
                     let count = state.mon_stats.entry(m.clone()).or_insert(0);
                     *count += 1;
