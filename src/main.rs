@@ -100,6 +100,8 @@ impl App {
             " <P> ".blue().bold(),
             " Reset ".into(),
             " <R> ".blue().bold(),
+            " GameMode ".into(),
+            " <T> ".blue().bold(),
             " Quit ".into(),
             " <Q> ".blue().bold(),
         ]));
@@ -136,8 +138,11 @@ impl App {
                 .yellow()
                 .centered(),
             Line::from("").centered(),
-            Line::from("Mode").centered(),
+            Line::from("Encounter Mode").centered(),
             Line::from(format!("{}", self.encounter_state.mode)).centered(),
+            Line::from("").centered(),
+            Line::from("Game Mode").centered(),
+            Line::from(format!("{}", self.encounter_state.toggle)).centered(),
             Line::from("").centered(),
             Line::from("Top 5 encounters").centered(),
         ];
@@ -165,6 +170,13 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('s') => self.encounter_state.mode = Mode::Walk,
             KeyCode::Char('p') => self.encounter_state.mode = Mode::Pause,
+            KeyCode::Char('t') => {
+                self.encounter_state.toggle = match self.encounter_state.toggle {
+                    encounter::Toggle::Exp => encounter::Toggle::Runaway,
+                    encounter::Toggle::Runaway => encounter::Toggle::Safari,
+                    encounter::Toggle::Safari => encounter::Toggle::Exp,
+                };
+            }
             KeyCode::Char('r') => {
                 self.encounter_state = EncounterState::default();
                 save_state(&self.encounter_state).unwrap_or_default();

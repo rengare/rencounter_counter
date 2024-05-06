@@ -9,10 +9,9 @@ use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::time::Duration;
 
-const SLEEP_TIME_MS: u64 = 200;
 const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
     Init,
     Encounter,
@@ -31,6 +30,33 @@ impl std::fmt::Display for Mode {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Toggle {
+    Exp,
+    Runaway,
+    Safari,
+}
+
+impl Toggle {
+    fn to_num(&self) -> u64 {
+        match self {
+            Toggle::Exp => 2000,
+            Toggle::Runaway => 500,
+            Toggle::Safari => 200,
+        }
+    }
+}
+
+impl std::fmt::Display for Toggle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Toggle::Exp => write!(f, "Exp Mode"),
+            Toggle::Runaway => write!(f, "Runaway Mode"),
+            Toggle::Safari => write!(f, "Safari Mode"),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EncounterState {
     pub encounters: u32,
@@ -38,6 +64,7 @@ pub struct EncounterState {
     pub mode: Mode,
     pub mon_stats: HashMap<String, u32>,
     pub lure_on: bool,
+    pub toggle: Toggle,
 }
 
 impl Default for EncounterState {
@@ -48,6 +75,7 @@ impl Default for EncounterState {
             mode: Mode::Init,
             mon_stats: HashMap::new(),
             lure_on: false,
+            toggle: Toggle::Runaway,
         }
     }
 }
@@ -90,9 +118,12 @@ fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool
             if l.contains("lv.") {
                 // Efficiently find and collect monster names without collecting into Vec
                 let words = l.split_whitespace().collect::<Vec<_>>();
-                words.windows(2).filter(|w| w[1] == "lv.").for_each(|w| {
-                    mons.push(w[0].to_string());
-                });
+                words
+                    .windows(2)
+                    .filter(|w| w[1] == "lv." && w[0].len() > 3)
+                    .for_each(|w| {
+                        mons.push(w[0].to_string());
+                    });
             }
         });
 
@@ -161,8 +192,8 @@ pub fn encounter_process(
             let buffer = capture_screen(capturer)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
+            thread::sleep(Duration::from_millis(state.toggle.to_num()));
         }
-        thread::sleep(Duration::from_millis(SLEEP_TIME_MS));
     }
 
     match state.mode {
