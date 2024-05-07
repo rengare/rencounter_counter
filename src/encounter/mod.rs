@@ -159,19 +159,26 @@ fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error
             stride = buffer.len() / h;
         }
 
+        let threshold = 210;
         for y in 0..h {
             for x in 0..w {
                 let i = stride * y + 4 * x;
-                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i]]);
+                // if color is closed to white, set it to white
+                if buffer[i] > threshold && buffer[i + 1] > threshold && buffer[i + 2] > threshold {
+                    bitflipped.extend_from_slice(&[255, 255, 255]);
+                } else {
+                    bitflipped.extend_from_slice(&[0, 0, 0]);
+                }
             }
         }
 
         let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
             image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
-        let img = DynamicImage::ImageRgb8(img)
-            .crop(0, 50, w as u32, (h / 2 - 100) as u32)
-            .grayscale();
+        let img = DynamicImage::ImageRgb8(img).crop(0, 50, w as u32, (h / 2 - 100) as u32);
+        // .grayscale();
+
+        // img.save("test.png")?;
 
         return Ok(img);
     }
