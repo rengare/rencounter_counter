@@ -92,8 +92,18 @@ pub fn save_state(state: &EncounterState) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool), Box<dyn Error>> {
-    let img = ImageSource::from_bytes(data.as_bytes(), data.dimensions())?;
+fn get_mons(
+    engine: &OcrEngine,
+    data: &DynamicImage,
+) -> Result<(Vec<String>, bool), Box<dyn Error>> {
+    if data.dimensions().0 == 0 || data.dimensions().1 == 0 {
+        return Ok((vec![], false));
+    }
+
+    let d = &data.dimensions();
+    let raw = &data.to_rgb8();
+
+    let img = ImageSource::from_bytes(raw, *d)?;
     let ocr_input = engine.prepare_input(img)?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
@@ -172,7 +182,7 @@ pub fn encounter_process(
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
             let buffer = capture_screen(capturer)?;
-            let mons = get_mons(engine, buffer)?;
+            let mons = get_mons(engine, &buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
         }
