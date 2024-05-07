@@ -1,5 +1,6 @@
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb, RgbImage, Rgba};
 use ocrs::{ImageSource, OcrEngine};
+use rten_tensor::NdTensor;
 use scrap::Capturer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -92,18 +93,8 @@ pub fn save_state(state: &EncounterState) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_mons(
-    engine: &OcrEngine,
-    data: &DynamicImage,
-) -> Result<(Vec<String>, bool), Box<dyn Error>> {
-    if data.dimensions().0 == 0 || data.dimensions().1 == 0 {
-        return Ok((vec![], false));
-    }
-
-    let d = &data.dimensions();
-    let raw = &data.to_rgb8();
-
-    let img = ImageSource::from_bytes(raw, *d)?;
+fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), Box<dyn Error>> {
+    let img = ImageSource::from_bytes(data.as_raw(), data.dimensions())?;
     let ocr_input = engine.prepare_input(img)?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
@@ -140,7 +131,7 @@ fn get_mons(
     Ok((mons, lure_on))
 }
 
-fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error>> {
+fn capture_screen(capturer: &mut Capturer) -> Result<RgbImage, Box<dyn Error>> {
     let (w, h) = (capturer.width(), capturer.height());
 
     loop {
@@ -148,7 +139,6 @@ fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error
             Ok(buffer) => buffer,
             Err(error) => {
                 if error.kind() == WouldBlock {
-                    // Keep spinning.
                     continue;
                 } else {
                     panic!("Error: {}", error);
@@ -161,9 +151,8 @@ fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error
 
         let img = DynamicImage::ImageRgba8(img)
             .crop(0, 50, w as u32, (h / 2 - 100) as u32)
-            .grayscale();
-
-        img.save("test.png")?;
+            .grayscale()
+            .to_rgb8();
 
         return Ok(img);
     }
@@ -182,7 +171,7 @@ pub fn encounter_process(
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
             let buffer = capture_screen(capturer)?;
-            let mons = get_mons(engine, &buffer)?;
+            let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
         }
