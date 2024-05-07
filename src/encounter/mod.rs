@@ -1,4 +1,4 @@
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use ocrs::{ImageSource, OcrEngine};
 use scrap::Capturer;
 use serde::{Deserialize, Serialize};
@@ -93,8 +93,8 @@ pub fn save_state(state: &EncounterState) -> Result<(), Box<dyn Error>> {
 }
 
 fn get_mons(engine: &OcrEngine, data: DynamicImage) -> Result<(Vec<String>, bool), Box<dyn Error>> {
-    let source = ImageSource::from_bytes(data.as_bytes(), data.dimensions())?;
-    let ocr_input = engine.prepare_input(source)?;
+    let img = ImageSource::from_bytes(data.as_bytes(), data.dimensions())?;
+    let ocr_input = engine.prepare_input(img)?;
     let word_rects = engine.detect_words(&ocr_input)?;
     let line_rects = engine.find_text_lines(&ocr_input, &word_rects);
     let line_texts = engine.recognize_text(&ocr_input, &line_rects)?;
@@ -146,39 +146,14 @@ fn capture_screen(capturer: &mut Capturer) -> Result<DynamicImage, Box<dyn Error
             }
         };
 
-        let mut bitflipped = Vec::with_capacity(w * h * 3);
-        let mut stride = 0;
+        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
+            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*buffer)).unwrap();
 
-        #[cfg(target_os = "macos")]
-        {
-            stride = w * 4;
-        }
+        let img = DynamicImage::ImageRgba8(img)
+            .crop(0, 50, w as u32, (h / 2 - 100) as u32)
+            .grayscale();
 
-        #[cfg(not(target_os = "macos"))]
-        {
-            stride = buffer.len() / h;
-        }
-
-        let threshold = 210;
-        for y in 0..h {
-            for x in 0..w {
-                let i = stride * y + 4 * x;
-                // if color is closed to white, set it to white
-                if buffer[i] > threshold && buffer[i + 1] > threshold && buffer[i + 2] > threshold {
-                    bitflipped.extend_from_slice(&[255, 255, 255]);
-                } else {
-                    bitflipped.extend_from_slice(&[0, 0, 0]);
-                }
-            }
-        }
-
-        let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
-            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
-
-        let img = DynamicImage::ImageRgb8(img).crop(0, 50, w as u32, (h / 2 - 100) as u32);
-        // .grayscale();
-
-        // img.save("test.png")?;
+        img.save("test.png")?;
 
         return Ok(img);
     }
