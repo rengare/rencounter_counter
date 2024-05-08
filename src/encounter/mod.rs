@@ -1,6 +1,5 @@
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb, RgbImage, Rgba};
+use image::{DynamicImage, ImageBuffer, RgbImage, Rgba};
 use ocrs::{ImageSource, OcrEngine};
-use rten_tensor::NdTensor;
 use scrap::Capturer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -121,7 +120,7 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
                 let words = l.split_whitespace().collect::<Vec<_>>();
                 words
                     .windows(2)
-                    .filter(|w| w[1] == "lv." && w[0].len() > 3)
+                    .filter(|w| w[1] == "lv." && w[0].len() > 2)
                     .for_each(|w| {
                         mons.push(w[0].to_string());
                     });
