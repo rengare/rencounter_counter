@@ -59,14 +59,14 @@ jobs:
 
     - name: Upload build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.tar.gz
 
     - name: Upload build output (Windows)
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.zip
