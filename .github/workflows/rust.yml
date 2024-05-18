@@ -5,6 +5,8 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [created]
 
 env:
   CARGO_TERM_COLOR: always
@@ -68,3 +70,36 @@ jobs:
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.zip
+
+    - name: Create Release
+      if: github.event_name == 'release'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.event.release.tag_name }}
+        release_name: ${{ github.event.release.name }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset (Linux)
+      if: github.event_name == 'release' && matrix.os != 'windows-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: build-output.tar.gz
+        asset_name: build-output-${{ matrix.os }}.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Windows)
+      if: github.event_name == 'release' && matrix.os == 'windows-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: build-output.zip
+        asset_name: build-output-${{ matrix.os }}.zip
+        asset_content_type: application/zip
