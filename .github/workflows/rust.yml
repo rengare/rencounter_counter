@@ -47,20 +47,24 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
-    - name: Archive build output (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Archive build output (Linux and macOS)
+      if: matrix.os != 'windows-latest'
       run: tar -czvf build-output.tar.gz target/release/
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
-      run: tar -czvf build-output.tar.gz target\release\
+      run: Compress-Archive -Path target\release\* -DestinationPath build-output.zip
 
-    - name: Archive build output (macOS)
-      if: matrix.os == 'macos-latest'
-      run: tar -czvf build-output.tar.gz target/release/
-
-    - name: Upload build output
+    - name: Upload build output (Linux and macOS)
+      if: matrix.os != 'windows-latest'
       uses: actions/upload-artifact@v3
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.tar.gz
+
+    - name: Upload build output (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-output-${{ matrix.os }}
+        path: build-output.zip
