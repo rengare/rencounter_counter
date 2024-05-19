@@ -112,10 +112,13 @@ jobs:
 
     - name: Create GitHub Release
       id: create_release
+      run: |
+        RELEASE_NAME="Release $(date +'%Y-%m-%d %H:%M:%S')"
+        echo "::set-output name=RELEASE_NAME::$RELEASE_NAME"
       uses: actions/create-release@v1
       with:
-        tag_name: v${{ github.run_number }}
-        release_name: Release ${{ github.run_number }}
+        tag_name: ${{ steps.create_tag.outputs.TAG }}
+        release_name: ${{ steps.create_release.outputs.RELEASE_NAME }}
         draft: false
         prerelease: false
       env:
