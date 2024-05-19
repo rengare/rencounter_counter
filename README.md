@@ -1,4 +1,4 @@
-# Rencounter counter
+# Rencounter counter 0.0.1
 
 ## Description
 Encounter counter for the Pokemmo. 
