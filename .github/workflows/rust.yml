@@ -71,7 +71,6 @@ jobs:
         cp target/release/rencounter_counter rencounter_counter/
         cp text-detection.rten rencounter_counter/
         cp text-recognition.rten rencounter_counter/
-        zip -r build-output-${{ matrix.os }}-${{ matrix.arch }}.zip rencounter_counter
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
@@ -80,13 +79,12 @@ jobs:
         cp target/release/rencounter_counter.exe rencounter_counter/
         cp text-detection.rten rencounter_counter/
         cp text-recognition.rten rencounter_counter/
-        powershell Compress-Archive -Path rencounter_counter -DestinationPath build-output-${{ matrix.os }}.zip
 
     - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}-${{ matrix.arch }}
-        path: build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
+        path: rencounter_counter
 
   release:
     needs: build
