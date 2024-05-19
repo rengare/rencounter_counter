@@ -82,16 +82,41 @@ jobs:
         name: build-output-${{ matrix.os }}
         path: rencounter_counter
 
-    - name: Create Release
+    - name: Get Release ID
+      id: get_release
       if: github.event_name == 'release'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        tag_name: ${{ github.event.release.tag_name }}
-        release_name: ${{ github.event.release.name }}
-        draft: false
-        prerelease: false
+      run: |
+        response=$(curl -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/${{ github.repository }}/releases/tags/19.05.2024)
+        echo "RELEASE_ID=$(echo $response | jq -r .id)" >> $GITHUB_ENV
+
+    - name: Update or Create Release
+      if: github.event_name == 'release'
+      run: |
+        if [ -z "${{ env.RELEASE_ID }}" ] || [ "${{ env.RELEASE_ID }}" == "null" ]; then
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/releases \
+          -d '{
+            "tag_name": "19.05.2024",
+            "name": "19.05.2024",
+            "draft": false,
+            "prerelease": false
+          }'
+        else
+          curl -X PATCH \
+          -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/releases/${{ env.RELEASE_ID }} \
+          -d '{
+            "tag_name": "19.05.2024",
+            "name": "19.05.2024",
+            "draft": false,
+            "prerelease": false
+          }'
+        fi
 
     - name: Upload Release Asset (Linux and macOS)
       if: github.event_name == 'release' && matrix.os != 'windows-latest'
