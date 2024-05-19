@@ -31,7 +31,9 @@ It is a simple tool to keep track of the number of encounters in the game.
 
 ## Download stand alone app
 If you don't want to install Rust and run the app from the terminal, you can download the stand alone app from the following link
-![Download the app](https://github.com/rengare/rencounter_counter/blob/main/rencounter_counter_linux_windows_macm1.zip)
+![Download the app](https://github.com/rengare/rencounter_counter/actions)
+
+Click on latest build, then click on the artifact and download the app for your platform
 
 ### Recomendation
 Rencounter grabs a screenshot of your screen, cuts the height in half and take upper half (see picture)
