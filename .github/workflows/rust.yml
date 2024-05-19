@@ -53,18 +53,18 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: | 
         mkdir rencounter_counter 
-        cp target/release/rencounter_counter package/
-        cp text-detection.rten package/
-        cp text-recognition.rten package/
+        cp target/release/rencounter_counter rencounter_counter/
+        cp text-detection.rten rencounter_counter/
+        cp text-recognition.rten rencounter_counter/
         # zip -r build-output.zip package/
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
       run: | 
         mkdir rencounter_counter 
-        cp target/release/rencounter_counter.exe package/
-        cp text-detection.rten package/
-        cp text-recognition.rten package/
+        cp target/release/rencounter_counter.exe rencounter_counter/
+        cp text-detection.rten rencounter_counter/
+        cp text-recognition.rten rencounter_counter/
         # Compress-Archive -Path package\* -DestinationPath build-output.zip
 
     - name: Upload build output (Linux and macOS)
