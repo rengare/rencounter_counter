@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -48,6 +48,10 @@ jobs:
         brew install git
         brew install llvm
         brew install mingw-w64
+
+    - name: Create cargo bin directory (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: mkdir -p $HOME/.cargo/bin
 
     - name: Install Rustup (macOS)
       if: startsWith(matrix.os, 'macos')
