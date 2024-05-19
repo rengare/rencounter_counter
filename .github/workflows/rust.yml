@@ -51,11 +51,21 @@ jobs:
 
     - name: Archive build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
-      run: tar -czvf build-output.tar.gz target/release/
+      run: | 
+        mkdir package
+        cp target/release/rencounter_counter package/
+        cp text-detection.rten package/
+        cp text-recognition.rten package/
+        zip -r build-output.zip package/
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path target\release\* -DestinationPath build-output.zip
+      run: | 
+        mkdir package
+        cp target/release/rencounter_counter.exe package/
+        cp text-detection.rten package/
+        cp text-recognition.rten package/
+        Compress-Archive -Path package\* -DestinationPath build-output.zip
 
     - name: Upload build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
