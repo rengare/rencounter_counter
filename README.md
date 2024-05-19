@@ -34,12 +34,14 @@ If you don't want to install Rust and run the app from the terminal, you can dow
 ![Download the app](https://github.com/rengare/rencounter_counter/actions)
 
 Click on latest build, then click on the artifact and download the app for your platform
+![image](https://github.com/rengare/rencounter_counter/assets/10849982/1372904e-e224-4caa-93a3-9f4d889ae886)
+![image](https://github.com/rengare/rencounter_counter/assets/10849982/1ea1fbfb-46af-4af9-8c8f-5ee07bb60c69)
+
 
 ### Recomendation
 Rencounter grabs a screenshot of your screen, cuts the height in half and take upper half (see picture)
 It is recommended to play the game with 1920x1080 resolution and make the game bigger than half the width. Though you can still play with lower resolution but you need to find a good spot.
 ![image](https://github.com/rengare/rencounter_counter/assets/10849982/a32e8c46-824c-4a8f-ae48-856cf479b6e8)
-
 
 ## How build it from source 
 
