@@ -146,7 +146,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/linux/build-output-ubuntu-latest-x64.zip
+        asset_path: build/linux/x64/build-output-ubuntu-latest-x64.zip
         asset_name: build-output-ubuntu-latest-x64.zip
         asset_content_type: application/zip
       env:
@@ -156,7 +156,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/windows/build-output-windows-latest-x64.zip
+        asset_path: build/windows/x64/build-output-windows-latest-x64.zip
         asset_name: build-output-windows-latest-x64.zip
         asset_content_type: application/zip
       env:
