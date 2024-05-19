@@ -52,34 +52,34 @@ jobs:
     - name: Archive build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: | 
-        mkdir package
+        mkdir rencounter_counter 
         cp target/release/rencounter_counter package/
         cp text-detection.rten package/
         cp text-recognition.rten package/
-        zip -r build-output.zip package/
+        # zip -r build-output.zip package/
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
       run: | 
-        mkdir package
+        mkdir rencounter_counter 
         cp target/release/rencounter_counter.exe package/
         cp text-detection.rten package/
         cp text-recognition.rten package/
-        Compress-Archive -Path package\* -DestinationPath build-output.zip
+        # Compress-Archive -Path package\* -DestinationPath build-output.zip
 
     - name: Upload build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}
-        path: build-output.zip
+        path: rencounter_counter
 
     - name: Upload build output (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}
-        path: build-output.zip
+        path: rencounter_counter
 
     - name: Create Release
       if: github.event_name == 'release'
