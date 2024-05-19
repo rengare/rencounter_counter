@@ -49,6 +49,12 @@ jobs:
         brew install llvm
         brew install mingw-w64
 
+    - name: Install Rustup (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+
     - name: Set up Rust
       run: rustup update stable
 
