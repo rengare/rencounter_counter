@@ -12,18 +12,24 @@ env:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
-          - os: macos-12
-            arch: arm64
           - os: macos-13
             arch: arm64
-
     steps:
     - uses: actions/checkout@v4
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
@@ -83,50 +89,3 @@ jobs:
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.zip
-
-    - name: Get current date and time
-      id: date
-      run: echo "DATE=$(date +'%Y-%m-%dT%H-%M-%S')" >> $GITHUB_ENV
-
-    - name: Check if commit contains 'release'
-      id: check_commit
-      run: |
-        if [[ "${{ github.event.head_commit.message }}" == *"release"* ]]; then
-          echo "CREATE_RELEASE=true" >> $GITHUB_ENV
-        else
-          echo "CREATE_RELEASE=false" >> $GITHUB_ENV
-        fi
-
-    - name: Create Release
-      id: create_release
-      if: env.CREATE_RELEASE == 'true'
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        tag_name: ${{ env.DATE }}
-        release_name: ${{ env.DATE }}
-        draft: false
-        prerelease: false
-
-    - name: Upload Release Asset (Linux and macOS)
-      if: matrix.os != 'windows-latest' && env.CREATE_RELEASE == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build-output.zip
-        asset_name: build-output-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}.zip
-        asset_content_type: application/gzip
-
-    - name: Upload Release Asset (Windows)
-      if: matrix.os == 'windows-latest' && env.CREATE_RELEASE == 'true'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build-output.zip
-        asset_name: build-output-${{ matrix.os }}.zip
-        asset_content_type: application/zip
