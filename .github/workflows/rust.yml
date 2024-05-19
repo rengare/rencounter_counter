@@ -65,7 +65,7 @@ jobs:
         cp target/release/rencounter_counter rencounter_counter/
         cp text-detection.rten rencounter_counter/
         cp text-recognition.rten rencounter_counter/
-        zip -r build-output.zip rencounter_counter
+        zip -r build-output-${{ matrix.os }}.zip rencounter_counter
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
@@ -74,21 +74,13 @@ jobs:
         cp target/release/rencounter_counter.exe rencounter_counter/
         cp text-detection.rten rencounter_counter/
         cp text-recognition.rten rencounter_counter/
-        powershell Compress-Archive -Path rencounter_counter -DestinationPath build-output.zip
+        powershell Compress-Archive -Path rencounter_counter -DestinationPath build-output-${{ matrix.os }}.zip
 
-    - name: Upload build output (Linux and macOS)
-      if: matrix.os != 'windows-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
-        path: build-output.zip
-
-    - name: Upload build output (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}
-        path: build-output.zip
+        path: build-output-${{ matrix.os }}.zip
 
   release:
     needs: build
@@ -97,11 +89,26 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Download build artifacts
+    - name: Download Linux build artifact
+      if: always() && matrix.os == 'ubuntu-latest'
       uses: actions/download-artifact@v4
       with:
-        name: build-output-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
-        path: build/
+        name: build-output-ubuntu-latest
+        path: build/linux
+
+    - name: Download Windows build artifact
+      if: always() && matrix.os == 'windows-latest'
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output-windows-latest
+        path: build/windows
+
+    - name: Download macOS build artifact
+      if: always() && (matrix.os == 'macos-latest' || matrix.os == 'macos-13')
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output-macos-latest
+        path: build/macos
 
     - name: Create tag
       id: create_tag
@@ -118,6 +125,9 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.create_tag.outputs.TAG }}
-        files: build/build-output.zip
+        files: |
+          build/linux/build-output-ubuntu-latest.zip
+          build/windows/build-output-windows-latest.zip
+          build/macos/build-output-macos-latest.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
