@@ -19,8 +19,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
-          - os: macos-12
-            arch: arm64
           - os: macos-13
             arch: arm64
 
