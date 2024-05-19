@@ -23,18 +23,21 @@ jobs:
 
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb
+      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
 
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
+        choco install -y git
         choco install -y llvm
         choco install -y mingw
 
     - name: Install dependencies (macOS)
       if: startsWith(matrix.os, 'macos')
       run: |
+        brew install git
         brew install llvm
+        brew install mingw-w64
 
     - name: Create cargo bin directory (macOS)
       if: startsWith(matrix.os, 'macos')
@@ -91,31 +94,30 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Download build artifacts (Linux)
-      if: matrix.os != 'windows-latest'
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: build-output-ubuntu-latest-x86_64
+        name: build-output-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
         path: build/
 
-    - name: Download build artifacts (Windows)
-      if: matrix.os == 'windows-latest'
-      uses: actions/download-artifact@v4
-      with:
-        name: build-output-windows-latest
-        path: build/
-
-    - name: Download build artifacts (macOS)
-      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
-      uses: actions/download-artifact@v4
-      with:
-        name: build-output-macos-13-arm64
-        path: build/
+    - name: Create tag
+      id: create_tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        TAG_NAME="v$(date +'%Y%m%d%H%M%S')"
+        git tag $TAG_NAME
+        git push origin $TAG_NAME
+        echo "::set-output name=TAG::$TAG_NAME"
 
     - name: Create GitHub Release
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: ${{ steps.create_tag.outputs.TAG }}
         files: build/build-output.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
