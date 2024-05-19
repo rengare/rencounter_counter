@@ -110,15 +110,26 @@ jobs:
         name: build-output-macos-latest
         path: build/macos
 
+    - name: Create tag
+      id: create_tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        TAG_NAME="v$(date +'%Y%m%d%H%M%S')"
+        git tag $TAG_NAME
+        git push origin $TAG_NAME
+        echo "::set-output name=TAG::$TAG_NAME"
+
+    - name: Set release name
+      id: set_release_name
+      run: echo "RELEASE_NAME=Release $(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+
     - name: Create GitHub Release
       id: create_release
-      run: |
-        RELEASE_NAME="Release $(date +'%Y-%m-%d %H:%M:%S')"
-        echo "::set-output name=RELEASE_NAME::$RELEASE_NAME"
       uses: actions/create-release@v1
       with:
         tag_name: ${{ steps.create_tag.outputs.TAG }}
-        release_name: ${{ steps.create_release.outputs.RELEASE_NAME }}
+        release_name: ${{ env.RELEASE_NAME }}
         draft: false
         prerelease: false
       env:
