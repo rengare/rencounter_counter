@@ -21,33 +21,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Cache Rust dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
-
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
+      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb
 
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        choco install -y git
         choco install -y llvm
         choco install -y mingw
 
     - name: Install dependencies (macOS)
       if: startsWith(matrix.os, 'macos')
       run: |
-        brew install git
         brew install llvm
-        brew install mingw-w64
 
     - name: Create cargo bin directory (macOS)
       if: startsWith(matrix.os, 'macos')
