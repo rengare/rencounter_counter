@@ -89,3 +89,36 @@ jobs:
       with:
         name: build-output-${{ matrix.os }}
         path: build-output.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download build artifacts (Linux)
+      if: matrix.os != 'windows-latest'
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output-ubuntu-latest-x86_64
+        path: build/
+
+    - name: Download build artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output-windows-latest
+        path: build/
+
+    - name: Download build artifacts (macOS)
+      if: matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+      uses: actions/download-artifact@v4
+      with:
+        name: build-output-macos-13-arm64
+        path: build/
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/build-output.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
