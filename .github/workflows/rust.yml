@@ -71,9 +71,8 @@ jobs:
         cp target/release/rencounter_counter build/${{ matrix.os }}-${{ matrix.arch }}/
         cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
         cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-        cd build/${{ matrix.os }}-${{ matrix.arch }}
-        zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
-        cd ../..
+        # cd build/${{ matrix.os }}-${{ matrix.arch }}
+        # zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
@@ -82,9 +81,8 @@ jobs:
         cp target/release/rencounter_counter.exe build/${{ matrix.os }}-${{ matrix.arch }}/
         cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
         cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-        cd build/${{ matrix.os }}-${{ matrix.arch }}
-        Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
-        cd ../..
+        # cd build/${{ matrix.os }}-${{ matrix.arch }}
+        # Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
 
     - name: List build directory contents
       run: ls -R build
@@ -93,7 +91,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}-${{ matrix.arch }}
-        path: build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
+        path: build/${{ matrix.os }}-${{ matrix.arch }}
 
   release:
     needs: build
@@ -106,25 +104,25 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: build-output-ubuntu-latest-x64
-        path: build/linux/x64
+        path: build
 
     - name: Download Windows build artifact
       uses: actions/download-artifact@v4
       with:
         name: build-output-windows-latest-x64
-        path: build/windows/x64
+        path: build
 
     - name: Download macOS x64 build artifact
       uses: actions/download-artifact@v4
       with:
         name: build-output-macos-latest-x64
-        path: build/macos/x64
+        path: build
 
     - name: Download macOS arm64 build artifact
       uses: actions/download-artifact@v4
       with:
         name: build-output-macos-latest-arm64
-        path: build/macos/arm64
+        path: build
 
     - name: Create tag
       id: create_tag
