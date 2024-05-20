@@ -128,40 +128,40 @@ jobs:
     #     name: build-output-macos-latest-arm64
     #     path: build
 
-    - name: Create tag
-      id: create_tag
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        TAG_NAME="v$(date +'%Y%m%d%H%M%S')"
-        git tag $TAG_NAME
-        git push origin $TAG_NAME
-        echo "::set-output name=TAG::$TAG_NAME"
+    # - name: Create tag
+    #   id: create_tag
+    #   run: |
+    #     git config --global user.name "github-actions[bot]"
+    #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    #     TAG_NAME="v$(date +'%Y%m%d%H%M%S')"
+    #     git tag $TAG_NAME
+    #     git push origin $TAG_NAME
+    #     echo "::set-output name=TAG::$TAG_NAME"
 
-    - name: Set release name
-      id: set_release_name
-      run: echo "RELEASE_NAME=Release $(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+    # - name: Set release name
+    #   id: set_release_name
+    #   run: echo "RELEASE_NAME=Release $(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
 
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ steps.create_tag.outputs.TAG }}
-        release_name: ${{ env.RELEASE_NAME }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Create GitHub Release
+    #   id: create_release
+    #   uses: actions/create-release@v1
+    #   with:
+    #     tag_name: ${{ steps.create_tag.outputs.TAG }}
+    #     release_name: ${{ env.RELEASE_NAME }}
+    #     draft: false
+    #     prerelease: false
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/build-output-ubuntu-latest-x64.zip
-        asset_name: build-output-ubuntu-latest-x64.zip
-        asset_content_type: application/zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Upload Linux Release Asset
+    #   uses: actions/upload-release-asset@v1
+    #   with:
+    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+    #     asset_path: build/build-output-ubuntu-latest-x64.zip
+    #     asset_name: build-output-ubuntu-latest-x64.zip
+    #     asset_content_type: application/zip
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # - name: Upload Windows Release Asset
     #   uses: actions/upload-release-asset@v1
