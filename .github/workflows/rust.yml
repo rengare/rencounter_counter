@@ -20,12 +20,12 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x64
-          # - os: windows-latest
-            # arch: x64
-          # - os: macos-latest
-            # arch: arm64
-          # - os: macos-latest
-            # arch: x64
+          - os: windows-latest
+            arch: x64
+          - os: macos-latest
+            arch: arm64
+          - os: macos-latest
+            arch: x64
     steps:
     - uses: actions/checkout@v4
 
@@ -33,27 +33,25 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
 
-    # - name: Install dependencies (Windows)
-    #   if: matrix.os == 'windows-latest'
-    #   run: |
-    #     choco install -y git
-    #     choco install -y llvm
-    #     choco install -y mingw
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install -y mingw
 
-    # - name: Install dependencies (macOS)
-    #   if: startsWith(matrix.os, 'macos')
-    #   run: |
-    #     brew install llvm
+    - name: Install dependencies (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        brew install llvm
 
-    # - name: Create cargo bin directory (macOS)
-    #   if: startsWith(matrix.os, 'macos')
-    #   run: mkdir -p $HOME/.cargo/bin
+    - name: Create cargo bin directory (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: mkdir -p $HOME/.cargo/bin
 
-    # - name: Install Rustup (macOS)
-    #   if: startsWith(matrix.os, 'macos')
-    #   run: |
-    #     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    #     source $HOME/.cargo/env
+    - name: Install Rustup (macOS)
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
 
     - name: Set up Rust
       run: rustup update stable
@@ -67,21 +65,20 @@ jobs:
     - name: Archive build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        mkdir -p build/
-        cp target/release/rencounter_counter build/
-        cp text-detection.rten build/
-        cp text-recognition.rten build/
-        zip -r ${{matrix.os}}-${{matrix.arch}}.zip build 
+        mkdir -p rencounter/
+        cp target/release/rencounter_counter rencounter/
+        cp text-detection.rten rencounter/
+        cp text-recognition.rten rencounter/
+        zip -r ${{matrix.os}}-${{matrix.arch}}.zip rencounter 
 
-    # - name: Archive build output (Windows)
-    #   if: matrix.os == 'windows-latest'
-    #   run: |
-    #     mkdir -p build/${{ matrix.os }}-${{ matrix.arch }}
-    #     cp target/release/rencounter_counter.exe build/${{ matrix.os }}-${{ matrix.arch }}/
-    #     cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-    #     cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-    #     # cd build/${{ matrix.os }}-${{ matrix.arch }}
-    #     # Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
+    - name: Archive build output (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mkdir -p rencounter 
+        cp target/release/rencounter_counter.exe rencounter/ 
+        cp text-detection.rten rencounter/
+        cp text-recognition.rten rencounter/ 
+        Compress-Archive -Path rencounter -DestinationPath ${{ matrix.os }}-${{ matrix.arch }}.zip
 
     - name: Upload build output
       uses: actions/upload-artifact@v4
@@ -131,6 +128,24 @@ jobs:
         name: ubuntu-latest-x64
         path: ./
 
+    - name: Download Windows build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-latest-x64
+        path: ./ 
+
+    - name: Download macOS x64 build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-latest-x64
+        path: ./ 
+
+    - name: Download macOS arm64 build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-latest-arm64
+        path: ./ 
+
     - name: Upload Linux Release Asset
       uses: actions/upload-release-asset@v1
       with:
@@ -141,52 +156,32 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    # - name: Download Windows build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-windows-latest-x64
-    #     path: build
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: windows-latest-x64.zip
+        asset_name: windows-latest-x64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    # - name: Download macOS x64 build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-macos-latest-x64
-    #     path: build
+    - name: Upload macOS x64 Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: macos-latest-x64.zip
+        asset_name: macos-latest-x64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    # - name: Download macOS arm64 build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-macos-latest-arm64
-    #     path: build
-
-
-
-    # - name: Upload Windows Release Asset
-    #   uses: actions/upload-release-asset@v1
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: build/build-output-windows-latest-x64.zip
-    #     asset_name: build-output-windows-latest-x64.zip
-    #     asset_content_type: application/zip
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # - name: Upload macOS x64 Release Asset
-    #   uses: actions/upload-release-asset@v1
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: build/build-output-macos-latest-x64.zip
-    #     asset_name: build-output-macos-latest-x64.zip
-    #     asset_content_type: application/zip
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # - name: Upload macOS arm64 Release Asset
-    #   uses: actions/upload-release-asset@v1
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: build/build-output-macos-latest-arm64.zip
-    #     asset_name: build-output-macos-latest-arm64.zip
-    #     asset_content_type: application/zip
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload macOS arm64 Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: macos-latest-arm64.zip
+        asset_name: macos-latest-arm64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
