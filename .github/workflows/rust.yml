@@ -156,8 +156,8 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/ubuntu-latest-x64
-        asset_name: ubuntu-latest-x64.zip
+        asset_path: build/ubuntu-latest-x64.zip
+        asset_name: ubuntu-latest-x64
         asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
