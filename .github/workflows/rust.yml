@@ -86,6 +86,9 @@ jobs:
         Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
         cd ../..
 
+    - name: List build directory contents
+      run: ls -R build
+
     - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
