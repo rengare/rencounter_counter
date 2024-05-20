@@ -146,7 +146,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/linux/build-output-ubuntu-latest-x64.zip
+        asset_path: build/build-output-ubuntu-latest-x64.zip
         asset_name: build-output-ubuntu-latest-x64.zip
         asset_content_type: application/zip
       env:
@@ -156,7 +156,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/windows/build-output-windows-latest-x64.zip
+        asset_path: build/build-output-windows-latest-x64.zip
         asset_name: build-output-windows-latest-x64.zip
         asset_content_type: application/zip
       env:
@@ -166,7 +166,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/macos/x64/build-output-macos-latest-x64.zip
+        asset_path: build/build-output-macos-latest-x64.zip
         asset_name: build-output-macos-latest-x64.zip
         asset_content_type: application/zip
       env:
@@ -176,7 +176,7 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/macos/arm64/build-output-macos-latest-arm64.zip
+        asset_path: build/build-output-macos-latest-arm64.zip
         asset_name: build-output-macos-latest-m1.zip
         asset_content_type: application/zip
       env:
