@@ -67,12 +67,11 @@ jobs:
     - name: Archive build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        mkdir -p build/${{ matrix.os }}-${{ matrix.arch }}
-        cp target/release/rencounter_counter build/${{ matrix.os }}-${{ matrix.arch }}/
-        cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-        cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
-        # cd build/${{ matrix.os }}-${{ matrix.arch }}
-        # zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
+        mkdir -p build/
+        cp target/release/rencounter_counter build/
+        cp text-detection.rten build/
+        cp text-recognition.rten build/
+        zip -r ${{matrix.os}}-${{matrix.arch}}.zip build 
 
     # - name: Archive build output (Windows)
     #   if: matrix.os == 'windows-latest'
@@ -85,13 +84,13 @@ jobs:
     #     # Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
 
     - name: List build directory contents
-      run: ls -R build
+      run: ls -R . 
 
     - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{ matrix.arch }}
-        path: build/${{ matrix.os }}-${{ matrix.arch }}
+        path: ${{ matrix.os }}-${{ matrix.arch }}.zip
 
   release:
     needs: build
@@ -104,7 +103,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: ubuntu-latest-x64
-        path: build/ubuntu-latest-x64
+        path: build/ubuntu-latest-x64.zip
 
     - name: LS build directory
       run: |
