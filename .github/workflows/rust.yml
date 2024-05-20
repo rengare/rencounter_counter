@@ -83,9 +83,6 @@ jobs:
     #     # cd build/${{ matrix.os }}-${{ matrix.arch }}
     #     # Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
 
-    - name: List build directory contents
-      run: ls -R . 
-
     - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
@@ -99,33 +96,9 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Download Linux build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: ubuntu-latest-x64
-        path: build/ubuntu-latest-x64.zip
-
     - name: LS build directory
       run: |
         ls -R . 
-
-    # - name: Download Windows build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-windows-latest-x64
-    #     path: build
-
-    # - name: Download macOS x64 build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-macos-latest-x64
-    #     path: build
-
-    # - name: Download macOS arm64 build artifact
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: build-output-macos-latest-arm64
-    #     path: build
 
     - name: Create tag
       id: create_tag
@@ -152,15 +125,41 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Download Linux build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ubuntu-latest-x64
+        path: ./
+
     - name: Upload Linux Release Asset
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/ubuntu-latest-x64.zip
-        asset_name: ubuntu-latest-x64
+        asset_path: ubuntu-latest-x64.zip
+        asset_name: ubuntu-latest-x64.zip
         asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # - name: Download Windows build artifact
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: build-output-windows-latest-x64
+    #     path: build
+
+    # - name: Download macOS x64 build artifact
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: build-output-macos-latest-x64
+    #     path: build
+
+    # - name: Download macOS arm64 build artifact
+    #   uses: actions/download-artifact@v4
+    #   with:
+    #     name: build-output-macos-latest-arm64
+    #     path: build
+
+
 
     # - name: Upload Windows Release Asset
     #   uses: actions/upload-release-asset@v1
