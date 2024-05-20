@@ -83,7 +83,7 @@ jobs:
         cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
         cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
         cd build/${{ matrix.os }}-${{ matrix.arch }}
-        zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
+        Compress-Archive -Path . -DestinationPath ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
         cd ../..
 
     - name: Upload build output
