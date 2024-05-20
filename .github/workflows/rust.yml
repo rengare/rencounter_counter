@@ -67,24 +67,30 @@ jobs:
     - name: Archive build output (Linux and macOS)
       if: matrix.os != 'windows-latest'
       run: |
-        mkdir rencounter_counter
-        cp target/release/rencounter_counter rencounter_counter/
-        cp text-detection.rten rencounter_counter/
-        cp text-recognition.rten rencounter_counter/
+        mkdir -p build/${{ matrix.os }}-${{ matrix.arch }}
+        cp target/release/rencounter_counter build/${{ matrix.os }}-${{ matrix.arch }}/
+        cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
+        cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
+        cd build/${{ matrix.os }}-${{ matrix.arch }}
+        zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
+        cd ../..
 
     - name: Archive build output (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        mkdir rencounter_counter
-        cp target/release/rencounter_counter.exe rencounter_counter/
-        cp text-detection.rten rencounter_counter/
-        cp text-recognition.rten rencounter_counter/
+        mkdir -p build/${{ matrix.os }}-${{ matrix.arch }}
+        cp target/release/rencounter_counter.exe build/${{ matrix.os }}-${{ matrix.arch }}/
+        cp text-detection.rten build/${{ matrix.os }}-${{ matrix.arch }}/
+        cp text-recognition.rten build/${{ matrix.os }}-${{ matrix.arch }}/
+        cd build/${{ matrix.os }}-${{ matrix.arch }}
+        zip -r ../../build-output-${{ matrix.os }}-${{ matrix.arch }}.zip .
+        cd ../..
 
     - name: Upload build output
       uses: actions/upload-artifact@v4
       with:
         name: build-output-${{ matrix.os }}-${{ matrix.arch }}
-        path: rencounter_counter
+        path: build-output-${{ matrix.os }}-${{ matrix.arch }}.zip
 
   release:
     needs: build
@@ -177,7 +183,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: build/build-output-macos-latest-arm64.zip
-        asset_name: build-output-macos-latest-m1.zip
+        asset_name: build-output-macos-latest-arm64.zip
         asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
