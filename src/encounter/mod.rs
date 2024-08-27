@@ -147,8 +147,21 @@ fn capture_screen(capturer: &mut Capturer, debug: bool) -> Result<RgbImage, Box<
             }
         };
 
+        let mut bitflipped = Vec::with_capacity(w * h * 4);
+        let stride = match (std::env::consts::OS, std::env::consts::ARCH) {
+            ("macos", "arm" | "aarch64" | "loongarch64") => w * 4,
+            _ => buffer.len() / h,
+        };
+
+        for y in 0..h {
+            for x in 0..w {
+                let i = stride * y + 4 * x;
+                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i], 255]);
+            }
+        }
+
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
-            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*buffer)).unwrap();
+            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
 
         let img = DynamicImage::ImageRgba8(img)
             .crop(0, 50, w as u32, (h / 2 - 100) as u32)
@@ -156,7 +169,7 @@ fn capture_screen(capturer: &mut Capturer, debug: bool) -> Result<RgbImage, Box<
             .to_rgb8();
 
         if debug {
-            img.save("debug.png");
+            let _ = img.save("debug.png");
         }
 
         return Ok(img);
