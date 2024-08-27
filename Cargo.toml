@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ocrs ={ git ="https://github.com/robertknight/ocrs.git"}
+ocrs = { git = "https://github.com/robertknight/ocrs.git" }
 anyhow = "1.0.80"
 rayon = "1.7.0"
 rten = { version = "0.8.0" }
@@ -20,6 +20,6 @@ scrap = "0.5.0"
 image = "0.25.1"
 repng = "0.2.2"
 serde_json = "1.0.116"
-serde = {version = "1.0.199", features = ["derive"]}
+serde = { version = "1.0.199", features = ["derive"] }
 ratatui = "0.26.2"
 crossterm = "0.27.0"
