@@ -65,6 +65,7 @@ pub struct EncounterState {
     pub mon_stats: HashMap<String, u32>,
     pub lure_on: bool,
     pub toggle: Toggle,
+    pub debug: bool,
 }
 
 impl Default for EncounterState {
@@ -76,6 +77,7 @@ impl Default for EncounterState {
             mon_stats: HashMap::new(),
             lure_on: false,
             toggle: Toggle::Runaway,
+            debug: false,
         }
     }
 }
@@ -130,7 +132,7 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     Ok((mons, lure_on))
 }
 
-fn capture_screen(capturer: &mut Capturer) -> Result<RgbImage, Box<dyn Error>> {
+fn capture_screen(capturer: &mut Capturer, debug: bool) -> Result<RgbImage, Box<dyn Error>> {
     let (w, h) = (capturer.width(), capturer.height());
 
     loop {
@@ -153,6 +155,10 @@ fn capture_screen(capturer: &mut Capturer) -> Result<RgbImage, Box<dyn Error>> {
             .grayscale()
             .to_rgb8();
 
+        if debug {
+            img.save("debug.png");
+        }
+
         return Ok(img);
     }
 }
@@ -169,7 +175,7 @@ pub fn encounter_process(
     let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen(capturer)?;
+            let buffer = capture_screen(capturer, state.debug)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));

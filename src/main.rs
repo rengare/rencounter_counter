@@ -104,6 +104,8 @@ impl App {
             " <T> ".blue().bold(),
             " Quit ".into(),
             " <Q> ".blue().bold(),
+            " Debug ".into(),
+            " <D> ".blue().bold(),
         ]));
 
         let block = Block::default()
@@ -126,9 +128,15 @@ impl App {
 
         top_five.sort_by(|a, b| Ord::cmp(&b.1, &a.1));
 
+        let mut encounter_text = self.encounter_state.encounters.to_string();
+
+        if self.encounter_state.debug {
+            encounter_text += "(debug mode)";
+        }
+
         let mut texts = vec![
             Line::from("Encounter number").centered(),
-            Line::from(format!("{}", self.encounter_state.encounters)).centered(),
+            Line::from(encounter_text.to_string()).centered(),
             Line::from("").centered(),
             Line::from("Last encounter").centered(),
             Line::from(format!("{:?}", self.encounter_state.last_encounter)).centered(),
@@ -169,6 +177,7 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('s') => self.encounter_state.mode = Mode::Walk,
+            KeyCode::Char('d') => self.encounter_state.debug = !self.encounter_state.debug,
             KeyCode::Char('p') => self.encounter_state.mode = Mode::Pause,
             KeyCode::Char('t') => {
                 self.encounter_state.toggle = match self.encounter_state.toggle {
