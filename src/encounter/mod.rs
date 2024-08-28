@@ -149,7 +149,7 @@ fn capture_screen(capturer: &mut Capturer, debug: bool) -> Result<RgbImage, Box<
 
         let mut bitflipped = Vec::with_capacity(w * h * 4);
         let stride = match (std::env::consts::OS, std::env::consts::ARCH) {
-            ("macos", "arm" | "aarch64" | "loongarch64") => w * 4,
+            ("macos", _) => w * 4,
             _ => buffer.len() / h,
         };
 
