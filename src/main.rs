@@ -2,7 +2,6 @@ extern crate image;
 extern crate regex;
 extern crate rten_imageio;
 extern crate rten_tensor;
-extern crate scrap;
 
 mod encounter;
 mod tui;
@@ -22,7 +21,6 @@ use ratatui::{
     Frame,
 };
 use rten::Model;
-use scrap::{Capturer, Display};
 use std::error::Error;
 use std::fs;
 
@@ -63,12 +61,9 @@ impl App {
     }
 
     fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
-        let display = Display::primary().expect("Couldn't find primary display.");
-        let mut capturer = Capturer::new(display).expect("Couldn't begin capture.");
-
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
-            encounter_process(&self.engine, &mut capturer, &mut self.encounter_state)?;
+            encounter_process(&self.engine, &mut self.encounter_state)?;
 
             if self.exit {
                 break;
@@ -202,14 +197,21 @@ impl Default for App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let mut terminal = tui::init()?;
-    terminal.clear()?;
+    for window in xcap::Window::all().unwrap().iter() {
+        println!("Window: {:?}", window.app_name());
 
-    let mut app = App::default();
-    app.run(&mut terminal)?;
+        let img = window.capture_image().unwrap();
+        let _ = img.save("debug.png");
+    }
 
-    tui::restore()?;
-    terminal.clear()?;
+    // let mut terminal = tui::init()?;
+    // terminal.clear()?;
+    //
+    // let mut app = App::default();
+    // app.run(&mut terminal)?;
+    //
+    // tui::restore()?;
+    // terminal.clear()?;
 
     Ok(())
 }

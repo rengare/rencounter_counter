@@ -1,13 +1,13 @@
-use image::{DynamicImage, ImageBuffer, RgbImage, Rgba};
+use core::panic;
+use image::{DynamicImage, RgbImage};
 use ocrs::{ImageSource, OcrEngine};
-use scrap::Capturer;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::io::ErrorKind::WouldBlock;
 use std::thread;
 use std::time::Duration;
+use xcap::Window;
 
 const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 
@@ -132,55 +132,33 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     Ok((mons, lure_on))
 }
 
-fn capture_screen(capturer: &mut Capturer, debug: bool) -> Result<RgbImage, Box<dyn Error>> {
-    let (w, h) = (capturer.width(), capturer.height());
-
-    loop {
-        let buffer = match (*capturer).frame() {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                if error.kind() == WouldBlock {
-                    continue;
-                } else {
-                    panic!("Error: {}", error);
-                }
-            }
-        };
-
-        let mut bitflipped = Vec::with_capacity(w * h * 4);
-        // let stride = match (std::env::consts::OS, std::env::consts::ARCH) {
-        //     ("macos", _) => w * 4,
-        //     _ => buffer.len() / h,
-        // };
-
-        let stride = w * 4;
-
-        for y in 0..h {
-            for x in 0..w {
-                let i = stride * y + 4 * x;
-                bitflipped.extend_from_slice(&[buffer[i + 2], buffer[i + 1], buffer[i], 255]);
-            }
-        }
-
-        let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
-            image::ImageBuffer::from_raw(w as u32, h as u32, Vec::from(&*bitflipped)).unwrap();
-
+fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
+    if let Some(window) = Window::all()
+        .unwrap()
+        .iter()
+        .find(|w| w.app_name().to_lowercase() == "pokemmo")
+    {
+        let img = window.capture_image().unwrap();
         let img = DynamicImage::ImageRgba8(img)
-            .crop(0, 50, w as u32, (h / 2 - 100) as u32)
+            .crop(
+                0,
+                0,
+                window.width() as u32,
+                (window.height() / 2 - 100) as u32,
+            )
             .grayscale()
             .to_rgb8();
 
         if debug {
             let _ = img.save("debug.png");
         }
-
         return Ok(img);
     }
+    panic!("cant find the game");
 }
 
 pub fn encounter_process(
     engine: &OcrEngine,
-    capturer: &mut Capturer,
     state: &mut EncounterState,
 ) -> Result<(), Box<dyn Error>> {
     if state.mode == Mode::Init || state.mode == Mode::Pause {
@@ -190,7 +168,7 @@ pub fn encounter_process(
     let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen(capturer, state.debug)?;
+            let buffer = capture_screen(state.debug)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
