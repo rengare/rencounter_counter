@@ -145,7 +145,7 @@ fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
                 0,
                 0,
                 window.width() as u32,
-                (window.height() / 2 - 100) as u32,
+                (window.height() as f32 * 0.7) as u32,
             )
             .grayscale()
             .to_rgb8();
