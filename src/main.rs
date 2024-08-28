@@ -6,6 +6,7 @@ extern crate rten_tensor;
 mod encounter;
 mod tui;
 
+use core::panic;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use encounter::{encounter_process, load_state, save_state, EncounterState, Mode};
 use ocrs::{OcrEngine, OcrEngineParams};
@@ -23,6 +24,7 @@ use ratatui::{
 use rten::Model;
 use std::error::Error;
 use std::fs;
+use xcap::Window;
 
 fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
     let detection_model_data = fs::read("text-detection.rten")?;
@@ -197,21 +199,28 @@ impl Default for App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    for window in xcap::Window::all().unwrap().iter() {
-        println!("Window: {:?}", window.app_name());
+    // for window in Window::all().unwrap().iter() {
+    //     println!("Window: {:?}", window.app_name());
+    //
+    //     let img = window.capture_image().unwrap();
+    //     let _ = img.save("debug.png");
+    // }
+    //
+    if let Some(_) = Window::all()
+        .unwrap()
+        .iter()
+        .find(|w| w.app_name().to_lowercase() == "pokemmo")
+    {
+        let mut terminal = tui::init()?;
+        terminal.clear()?;
 
-        let img = window.capture_image().unwrap();
-        let _ = img.save("debug.png");
+        let mut app = App::default();
+        app.run(&mut terminal)?;
+
+        tui::restore()?;
+        terminal.clear()?;
+        Ok(())
+    } else {
+        panic!("Pokemmo game not found");
     }
-
-    // let mut terminal = tui::init()?;
-    // terminal.clear()?;
-    //
-    // let mut app = App::default();
-    // app.run(&mut terminal)?;
-    //
-    // tui::restore()?;
-    // terminal.clear()?;
-
-    Ok(())
 }
