@@ -8,7 +8,7 @@ mod tui;
 
 use core::panic;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use encounter::{encounter_process, load_state, save_state, EncounterState, Mode};
+use encounter::{encounter_process, load_state, save_state, EncounterState, Mode, APP_NAME};
 use ocrs::{OcrEngine, OcrEngineParams};
 use ratatui::{
     layout::Alignment,
@@ -200,16 +200,17 @@ impl Default for App {
 
 fn main() -> Result<(), Box<dyn Error>> {
     // for window in Window::all().unwrap().iter() {
-    //     println!("Window: {:?}", window.app_name());
+    //     println!("Window: {:?}", (window.app_name(), window.title()));
     //
     //     let img = window.capture_image().unwrap();
     //     let _ = img.save("debug.png");
     // }
-    //
+    // Ok(())
+
     if let Some(_) = Window::all()
         .unwrap()
         .iter()
-        .find(|w| w.app_name().to_lowercase() == "pokemmo")
+        .find(|w| w.app_name().to_lowercase() == APP_NAME || w.title().to_lowercase() == APP_NAME)
     {
         let mut terminal = tui::init()?;
         terminal.clear()?;
@@ -221,6 +222,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         terminal.clear()?;
         Ok(())
     } else {
-        panic!("Pokemmo game not found");
+        panic!("{} game not found", APP_NAME);
     }
 }

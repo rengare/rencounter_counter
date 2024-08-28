@@ -10,6 +10,7 @@ use std::time::Duration;
 use xcap::Window;
 
 const ENCOUNTER_DETECT_FRAMES: i32 = 2;
+pub const APP_NAME: &str = "pokemmo";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -136,7 +137,7 @@ fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
     if let Some(window) = Window::all()
         .unwrap()
         .iter()
-        .find(|w| w.app_name().to_lowercase() == "pokemmo")
+        .find(|w| w.app_name().to_lowercase() == APP_NAME || w.title().to_lowercase() == APP_NAME)
     {
         let img = window.capture_image().unwrap();
         let img = DynamicImage::ImageRgba8(img)
