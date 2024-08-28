@@ -48,15 +48,7 @@ It is recommended to play the game with 1920x1080 resolution and make the game b
 1. Install dependencies
 Ubuntu / Mint / Debian / PopOS
 ```bash
-sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
-```
-Fedora / RedHat
-```bash
-sudo dnf install @development-tools gcc gcc-c++ make git libxcb-devel xcb-util-keysyms-devel xcb-util-devel xcb-util-wm-devel
-```
-Arch 
-```bash
-sudo pacman -S base-devel git xcb-util xcb-util-keysyms xcb-util-wm
+sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git libxcb1 libxrandr2 libdbus-1-3
 ```
 
 ### Windows
