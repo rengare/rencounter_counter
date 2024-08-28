@@ -72,8 +72,7 @@ cargo run --release
 - [x] Test on Windows and Mac(pre M1 and post)
 - [x] Show top 5 mons with the most encounters
 - [x] Remove reading/writing from file/to file every 100MS, use buffer instead
-- [ ] Save number of encounter per mon
+- [x] Save number of encounter per mon
 - [ ] Retrain AI model with Pokemmo fonts or use different fonts that work better with the current model
-- [ ] Detect when the game is covered by another app and pause the counter
-- [ ] Add a way for user to select encounter area on screen
+- [x] Detect when the game is covered by another app and pause the counter
 
