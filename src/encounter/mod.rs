@@ -11,6 +11,7 @@ use xcap::Window;
 
 const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 pub const APP_NAME: &str = "pokemmo";
+pub const JAVA: &str = "java";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -134,11 +135,11 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
 }
 
 fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
-    if let Some(window) = Window::all()
-        .unwrap()
-        .iter()
-        .find(|w| w.app_name().to_lowercase() == APP_NAME || w.title().to_lowercase() == APP_NAME)
-    {
+    if let Some(window) = Window::all().unwrap().iter().find(|w| {
+        let name = w.app_name().to_lowercase();
+        let title = w.title().to_lowercase();
+        return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
+    }) {
         let img = window.capture_image().unwrap();
         let img = DynamicImage::ImageRgba8(img)
             .crop(

@@ -8,7 +8,7 @@ mod tui;
 
 use core::panic;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use encounter::{encounter_process, load_state, save_state, EncounterState, Mode, APP_NAME};
+use encounter::{encounter_process, load_state, save_state, EncounterState, Mode, APP_NAME, JAVA};
 use ocrs::{OcrEngine, OcrEngineParams};
 use ratatui::{
     layout::Alignment,
@@ -213,11 +213,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    if let Some(_) = Window::all()
-        .unwrap()
-        .iter()
-        .find(|w| w.app_name().to_lowercase() == APP_NAME || w.title().to_lowercase() == APP_NAME)
-    {
+    if let Some(_) = Window::all().unwrap().iter().find(|w| {
+        let name = w.app_name().to_lowercase();
+        let title = w.title().to_lowercase();
+        return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
+    }) {
         let mut terminal = tui::init()?;
         terminal.clear()?;
 
