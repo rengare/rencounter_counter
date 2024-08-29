@@ -29,9 +29,8 @@ use std::{env, error::Error};
 use xcap::Window;
 
 fn load_engine() -> Result<ocrs::OcrEngine, Box<dyn Error>> {
-    let path = get_current_working_dir();
-    let detection_model_data = fs::read(format!("{}/text-detection.rten", path))?;
-    let rec_model_data = fs::read(format!("{}/text-recognition.rten", path))?;
+    let detection_model_data = fs::read("text-detection.rten")?;
+    let rec_model_data = fs::read("text-recognition.rten")?;
     let detection_model = Model::load(&detection_model_data)?;
     let recognition_model = Model::load(&rec_model_data)?;
 
