@@ -1,9 +1,5 @@
 # Rencounter counter 0.0.2
 
-# > [!IMPORTANT]
-> Windows users, to run the encounter you need to install https://aka.ms/vs/17/release/vc_redist.x64.exe
-
-
 ## Description
 Encounter counter for the Pokemmo. 
 It is a simple tool to keep track of the number of encounters in the game.
