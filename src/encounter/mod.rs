@@ -84,12 +84,17 @@ impl Default for EncounterState {
     }
 }
 
-pub fn get_current_working_dir() -> String {
+pub fn get_current_working_dir() -> (String, String) {
+    let exe_path = std::env::current_exe();
+
     let path = std::env::current_dir();
-    if path.is_err() {
+    if exe_path.is_err() || path.is_err() {
         panic!("can't find currenct directory");
     } else {
-        path.unwrap().display().to_string()
+        (
+            exe_path.unwrap().parent().unwrap().display().to_string(),
+            path.unwrap().display().to_string(),
+        )
     }
 }
 
