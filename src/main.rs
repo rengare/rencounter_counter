@@ -22,8 +22,8 @@ use ratatui::{
     Frame,
 };
 use rten::Model;
-use std::error::Error;
 use std::fs;
+use std::{env, error::Error};
 use xcap::Window;
 
 fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
@@ -199,13 +199,19 @@ impl Default for App {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // for window in Window::all().unwrap().iter() {
-    //     println!("Window: {:?}", (window.app_name(), window.title()));
-    //
-    //     let img = window.capture_image().unwrap();
-    //     let _ = img.save("debug.png");
-    // }
-    // Ok(())
+    let is_debug = env::args().find(|arg| arg == "debug");
+
+    if is_debug.is_some() {
+        for window in Window::all().unwrap().iter() {
+            println!("Window: {:?}", (window.app_name(), window.title()));
+
+            if window.title().to_lowercase() == APP_NAME || window.app_name() == APP_NAME {
+                let img = window.capture_image().unwrap();
+                let _ = img.save("debug.png");
+            }
+        }
+        return Ok(());
+    }
 
     if let Some(_) = Window::all()
         .unwrap()
