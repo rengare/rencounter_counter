@@ -84,6 +84,15 @@ impl Default for EncounterState {
     }
 }
 
+pub fn get_current_working_dir() -> String {
+    let path = std::env::current_dir();
+    if path.is_err() {
+        panic!("can't find currenct directory");
+    } else {
+        path.unwrap().display().to_string()
+    }
+}
+
 pub fn load_state() -> Result<EncounterState, Box<dyn Error>> {
     let state_json = fs::read_to_string("state.json")?;
     let state: EncounterState = serde_json::from_str(&state_json)?;

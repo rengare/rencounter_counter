@@ -8,8 +8,10 @@ mod tui;
 
 use core::panic;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use encounter::{encounter_process, load_state, save_state, EncounterState, Mode, APP_NAME, JAVA};
-use ocrs::{OcrEngine, OcrEngineParams};
+use encounter::{
+    encounter_process, get_current_working_dir, load_state, save_state, EncounterState, Mode,
+    APP_NAME, JAVA,
+};
 use ratatui::{
     layout::Alignment,
     prelude::Stylize,
@@ -26,13 +28,14 @@ use std::fs;
 use std::{env, error::Error};
 use xcap::Window;
 
-fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
-    let detection_model_data = fs::read("./text-detection.rten")?;
-    let rec_model_data = fs::read("./text-recognition.rten")?;
+fn load_engine() -> Result<ocrs::OcrEngine, Box<dyn Error>> {
+    let path = get_current_working_dir();
+    let detection_model_data = fs::read(format!("{}/text-detection.rten", path))?;
+    let rec_model_data = fs::read(format!("{}/text-recognition.rten", path))?;
     let detection_model = Model::load(&detection_model_data)?;
     let recognition_model = Model::load(&rec_model_data)?;
 
-    let engine = OcrEngine::new(OcrEngineParams {
+    let engine = ocrs::OcrEngine::new(ocrs::OcrEngineParams {
         detection_model: Some(detection_model),
         recognition_model: Some(recognition_model),
         ..Default::default()
@@ -45,7 +48,7 @@ fn load_engine() -> Result<OcrEngine, Box<dyn Error>> {
 pub struct App {
     exit: bool,
     encounter_state: EncounterState,
-    engine: OcrEngine,
+    engine: ocrs::OcrEngine,
 }
 
 impl App {
@@ -202,6 +205,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let is_debug = env::args().find(|arg| arg == "debug");
 
     if is_debug.is_some() {
+        println!("The current directory is {}", get_current_working_dir());
         for window in Window::all().unwrap().iter() {
             println!("Window: {:?}", (window.app_name(), window.title()));
 
