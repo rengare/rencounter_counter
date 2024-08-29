@@ -31,7 +31,7 @@ jobs:
 
     - name: Install dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git
+      run: sudo apt-get install build-essential libxcb-shm0-dev libxcb-randr0-dev xcb git libxcb1 libxrandr2 libdbus-1-3
 
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
