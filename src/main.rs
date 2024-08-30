@@ -80,7 +80,12 @@ impl App {
     fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
-            encounter_process(&self.engine, &mut self.encounter_state)?;
+
+            let state = encounter_process(&self.engine, &mut self.encounter_state);
+
+            if state.is_err() {
+                continue;
+            }
 
             if self.exit {
                 break;
