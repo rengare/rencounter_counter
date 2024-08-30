@@ -1,4 +1,5 @@
 use core::panic;
+use image::ImageBuffer;
 use image::{DynamicImage, RgbImage};
 use ocrs::{ImageSource, OcrEngine};
 use serde::{Deserialize, Serialize};
@@ -170,7 +171,7 @@ fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
         }
         return Ok(img);
     }
-    panic!("cant find the game");
+    return Ok(ImageBuffer::new(0, 0));
 }
 
 pub fn encounter_process(
