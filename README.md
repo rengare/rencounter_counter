@@ -20,7 +20,7 @@ It is a simple tool to keep track of the number of encounters in the game.
 - go to the directory of app
 - run the following command
 ```bash
-./rencounter_counter_linux
+./rencounter_counter
 ```
 ### Mac
 - double click on the app
