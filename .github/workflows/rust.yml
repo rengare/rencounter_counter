@@ -142,6 +142,12 @@ jobs:
         name: macos-latest-x64
         path: ./ 
 
+    - name: Download macOS x86 build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-latest-x86
+        path: ./ 
+
     - name: Download macOS arm64 build artifact
       uses: actions/download-artifact@v4
       with:
@@ -177,6 +183,17 @@ jobs:
         asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS x86 Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: macos-latest-x86.zip
+        asset_name: macos-latest-x86.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
     - name: Upload macOS arm64 Release Asset
       uses: actions/upload-release-asset@v1
