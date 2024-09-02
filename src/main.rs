@@ -77,14 +77,16 @@ impl App {
         t
     }
 
-    fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
+    fn run(&mut self, terminal: &mut tui::Tui, window: &Window) -> Result<(), Box<dyn Error>> {
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
 
-            let state = encounter_process(&self.engine, &mut self.encounter_state);
+            let state = encounter_process(&window, &self.engine, &mut self.encounter_state);
 
             if state.is_err() {
-                continue;
+                tui::restore()?;
+                terminal.clear()?;
+                panic!("Game window not found. It was closed or minimized");
             }
 
             if self.exit {
@@ -235,7 +237,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    if let Some(_) = Window::all().unwrap().iter().find(|w| {
+    if let Some(window) = Window::all().unwrap().iter().find(|w| {
         let name = w.app_name().to_lowercase();
         let title = w.title().to_lowercase();
         return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
@@ -244,7 +246,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         terminal.clear()?;
 
         let mut app = App::default();
-        app.run(&mut terminal)?;
+        app.run(&mut terminal, &window)?;
 
         tui::restore()?;
         terminal.clear()?;

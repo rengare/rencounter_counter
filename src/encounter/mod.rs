@@ -1,5 +1,4 @@
 use core::panic;
-use image::ImageBuffer;
 use image::{DynamicImage, RgbImage};
 use ocrs::{ImageSource, OcrEngine};
 use serde::{Deserialize, Serialize};
@@ -149,32 +148,26 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     Ok((mons, lure_on))
 }
 
-fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
-    if let Some(window) = Window::all().unwrap().iter().find(|w| {
-        let name = w.app_name().to_lowercase();
-        let title = w.title().to_lowercase();
-        return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
-    }) {
-        let img = window.capture_image().unwrap();
-        let img = DynamicImage::ImageRgba8(img)
-            .crop(
-                0,
-                0,
-                window.width() as u32,
-                (window.height() as f32 * 0.7) as u32,
-            )
-            .grayscale()
-            .to_rgb8();
+fn capture_screen(window: &Window, debug: bool) -> Result<RgbImage, Box<dyn Error>> {
+    let img = window.capture_image()?;
+    let img = DynamicImage::ImageRgba8(img)
+        .crop(
+            0,
+            0,
+            window.width() as u32,
+            (window.height() as f32 * 0.7) as u32,
+        )
+        .grayscale()
+        .to_rgb8();
 
-        if debug {
-            let _ = img.save("debug.png");
-        }
-        return Ok(img);
+    if debug {
+        let _ = img.save("debug.png");
     }
-    return Ok(ImageBuffer::new(0, 0));
+    return Ok(img);
 }
 
 pub fn encounter_process(
+    window: &Window,
     engine: &OcrEngine,
     state: &mut EncounterState,
 ) -> Result<(), Box<dyn Error>> {
@@ -185,7 +178,7 @@ pub fn encounter_process(
     let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen(state.debug)?;
+            let buffer = capture_screen(&window, state.debug)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
