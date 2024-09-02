@@ -23,6 +23,7 @@ It is a simple tool to keep track of the number of encounters in the game.
 ./rencounter_counter
 ```
 ### Mac
+- if your mac is from before 2020, choose mac_x86_64, if your mac is from after 2020 choose mac_arm
 - double click on the app
 - hit s 
 - mac will ask you to give terminal permissions to take screenshots
