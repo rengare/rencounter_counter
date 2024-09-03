@@ -10,7 +10,7 @@ use core::panic;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use encounter::{
     encounter_process, get_current_working_dir, load_state, save_state, EncounterState, Mode,
-    APP_NAME, JAVA,
+    APP_NAME,
 };
 use ratatui::{
     layout::Alignment,
@@ -77,11 +77,11 @@ impl App {
         t
     }
 
-    fn run(&mut self, terminal: &mut tui::Tui, window: &Window) -> Result<(), Box<dyn Error>> {
+    fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
 
-            let state = encounter_process(&window, &self.engine, &mut self.encounter_state);
+            let state = encounter_process(&self.engine, &mut self.encounter_state);
 
             if state.is_err() {
                 tui::restore()?;
@@ -237,16 +237,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    if let Some(window) = Window::all().unwrap().iter().find(|w| {
-        let name = w.app_name().to_lowercase();
-        let title = w.title().to_lowercase();
-        return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
-    }) {
+    if let Some(_) = Window::all()
+        .unwrap()
+        .iter()
+        .find(|w| encounter::game_exist(w))
+    {
         let mut terminal = tui::init()?;
         terminal.clear()?;
 
         let mut app = App::default();
-        app.run(&mut terminal, &window)?;
+        app.run(&mut terminal)?;
 
         tui::restore()?;
         terminal.clear()?;

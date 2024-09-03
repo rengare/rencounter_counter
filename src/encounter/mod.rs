@@ -9,9 +9,10 @@ use std::thread;
 use std::time::Duration;
 use xcap::Window;
 
-const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 pub const APP_NAME: &str = "pokemmo";
 pub const JAVA: &str = "java";
+
+const ENCOUNTER_DETECT_FRAMES: i32 = 4;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {
@@ -43,7 +44,7 @@ impl Toggle {
     fn to_num(&self) -> u64 {
         match self {
             Toggle::Exp => 2000,
-            Toggle::Runaway => 500,
+            Toggle::Runaway => 800,
             Toggle::Safari => 200,
         }
     }
@@ -82,6 +83,12 @@ impl Default for EncounterState {
             debug: false,
         }
     }
+}
+
+pub fn game_exist(w: &&Window) -> bool {
+    let name = w.app_name().to_lowercase();
+    let title = w.title().to_lowercase();
+    return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
 }
 
 pub fn get_current_working_dir() -> (String, String) {
@@ -124,21 +131,20 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     line_texts
         .iter()
         .flatten()
-        .filter(|l| l.to_string().len() > 1)
-        .map(|line| line.to_string().replace("llv.", "lv.").to_lowercase())
+        .filter(|l| l.to_string().len() > 0)
+        .map(|line| line.to_string().to_lowercase())
         .for_each(|l| {
             // Check if 'lure' is in the line
             if l.contains("lure") {
                 lure_on = true;
             }
 
-            // Process lines containing "lv."
-            if l.contains("lv.") {
+            if l.contains("lv.") || l.contains("nv.") {
                 // Efficiently find and collect monster names without collecting into Vec
                 let words = l.split_whitespace().collect::<Vec<_>>();
                 words
                     .windows(2)
-                    .filter(|w| w[1] == "lv." && w[0].len() > 2)
+                    .filter(|w| (w[1] == "lv." || w[1] == "nv.") && w[0].len() > 1)
                     .for_each(|w| {
                         mons.push(w[0].to_string());
                     });
@@ -148,26 +154,29 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     Ok((mons, lure_on))
 }
 
-fn capture_screen(window: &Window, debug: bool) -> Result<RgbImage, Box<dyn Error>> {
-    let img = window.capture_image()?;
-    let img = DynamicImage::ImageRgba8(img)
-        .crop(
-            0,
-            0,
-            window.width() as u32,
-            (window.height() as f32 * 0.7) as u32,
-        )
-        .grayscale()
-        .to_rgb8();
+fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
+    if let Some(window) = Window::all().into_iter().flatten().find(|w| game_exist(&w)) {
+        let img = window.capture_image()?;
+        let img = DynamicImage::ImageRgba8(img)
+            .crop(
+                0,
+                0,
+                window.width() as u32,
+                (window.height() as f32 * 0.4) as u32,
+            )
+            .grayscale()
+            .to_rgb8();
 
-    if debug {
-        let _ = img.save("debug.png");
+        if debug {
+            let _ = img.save("debug.png");
+        }
+        return Ok(img);
+    } else {
+        Err("Game not found".into())
     }
-    return Ok(img);
 }
 
 pub fn encounter_process(
-    window: &Window,
     engine: &OcrEngine,
     state: &mut EncounterState,
 ) -> Result<(), Box<dyn Error>> {
@@ -178,7 +187,7 @@ pub fn encounter_process(
     let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen(&window, state.debug)?;
+            let buffer = capture_screen(state.debug)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
