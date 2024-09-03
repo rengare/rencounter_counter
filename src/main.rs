@@ -23,7 +23,7 @@ use ratatui::{
     },
     Frame,
 };
-use rten::Model;
+
 use std::fs;
 use std::{env, error::Error};
 use xcap::Window;
@@ -44,8 +44,8 @@ fn load_engine() -> Result<ocrs::OcrEngine, Box<dyn Error>> {
     let detection_model_data = fs::read(detection_path)?;
     let rec_model_data = fs::read(recognition_path)?;
 
-    let detection_model = Model::load(&detection_model_data)?;
-    let recognition_model = Model::load(&rec_model_data)?;
+    let detection_model = rten::Model::load(detection_model_data)?;
+    let recognition_model = rten::Model::load(rec_model_data)?;
 
     let engine = ocrs::OcrEngine::new(ocrs::OcrEngineParams {
         detection_model: Some(detection_model),
@@ -189,7 +189,7 @@ impl App {
         //     .take(5)
         //     .collect::<Vec<&(String, u32)>>();
 
-        frame.render_widget(Paragraph::new(texts).block(block), frame.size());
+        frame.render_widget(Paragraph::new(texts).block(block), frame.area());
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
@@ -237,10 +237,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    if let Some(_) = Window::all()
+    if Window::all()
         .unwrap()
         .iter()
-        .find(|w| encounter::game_exist(w))
+        .any(|w| encounter::game_exist(&w))
     {
         let mut terminal = tui::init()?;
         terminal.clear()?;

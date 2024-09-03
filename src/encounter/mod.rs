@@ -88,20 +88,16 @@ impl Default for EncounterState {
 pub fn game_exist(w: &&Window) -> bool {
     let name = w.app_name().to_lowercase();
     let title = w.title().to_lowercase();
-    return name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA;
+    name == APP_NAME || title == APP_NAME || name == JAVA || title == JAVA
 }
 
 pub fn get_current_working_dir() -> (String, String) {
-    let exe_path = std::env::current_exe();
-
-    let path = std::env::current_dir();
-    if exe_path.is_err() || path.is_err() {
-        panic!("can't find currenct directory");
-    } else {
-        (
-            exe_path.unwrap().parent().unwrap().display().to_string(),
-            path.unwrap().display().to_string(),
-        )
+    match (std::env::current_exe(), std::env::current_dir()) {
+        (Ok(exe_path), Ok(path)) => (
+            exe_path.parent().unwrap().display().to_string(),
+            path.display().to_string(),
+        ),
+        _ => panic!("can't find currenct directory"),
     }
 }
 
@@ -131,7 +127,7 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     line_texts
         .iter()
         .flatten()
-        .filter(|l| l.to_string().len() > 0)
+        .filter(|l| l.to_string().len() > 1)
         .map(|line| line.to_string().to_lowercase())
         .for_each(|l| {
             // Check if 'lure' is in the line
@@ -158,19 +154,14 @@ fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
     if let Some(window) = Window::all().into_iter().flatten().find(|w| game_exist(&w)) {
         let img = window.capture_image()?;
         let img = DynamicImage::ImageRgba8(img)
-            .crop(
-                0,
-                0,
-                window.width() as u32,
-                (window.height() as f32 * 0.4) as u32,
-            )
+            .crop(0, 0, window.width(), (window.height() as f32 * 0.4) as u32)
             .grayscale()
             .to_rgb8();
 
         if debug {
             let _ = img.save("debug.png");
         }
-        return Ok(img);
+        Ok(img)
     } else {
         Err("Game not found".into())
     }
