@@ -59,7 +59,7 @@ fn load_engine() -> Result<ocrs::OcrEngine, Box<dyn Error>> {
 #[derive()]
 pub struct App {
     exit: bool,
-    encounter_state: EncounterState,
+    pub encounter_state: EncounterState,
     engine: ocrs::OcrEngine,
 }
 
@@ -77,16 +77,20 @@ impl App {
         t
     }
 
-    fn run(&mut self, terminal: &mut tui::Tui) -> Result<(), Box<dyn Error>> {
+    fn run(&mut self, terminal: &mut tui::Tui, window: &Window) -> Result<(), Box<dyn Error>> {
         loop {
             terminal.draw(|frame| self.render_frame(frame))?;
 
-            let state = encounter_process(&self.engine, &mut self.encounter_state);
-
-            if state.is_err() {
-                tui::restore()?;
+            if encounter_process(&self.engine, &mut self.encounter_state, window).is_err() {
                 terminal.clear()?;
-                panic!("Game window not found. It was closed or minimized");
+                // Try to find a new valid window
+                if let Some(new_window) = Window::all()?.iter().find(encounter::game_exist) {
+                    let mut new_app = App::new();
+                    new_app.encounter_state.mode = Mode::Encounter;
+                    return new_app.run(terminal, new_window); // Re
+                } else {
+                    panic!("{} game not found", APP_NAME);
+                }
             }
 
             if self.exit {
@@ -237,16 +241,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    if Window::all()
-        .unwrap()
-        .iter()
-        .any(|w| encounter::game_exist(&w))
-    {
+    if let Some(window) = Window::all().unwrap().iter().find(encounter::game_exist) {
         let mut terminal = tui::init()?;
         terminal.clear()?;
 
         let mut app = App::default();
-        app.run(&mut terminal)?;
+        app.run(&mut terminal, window)?;
 
         tui::restore()?;
         terminal.clear()?;

@@ -150,26 +150,23 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
     Ok((mons, lure_on))
 }
 
-fn capture_screen(debug: bool) -> Result<RgbImage, Box<dyn Error>> {
-    if let Some(window) = Window::all().into_iter().flatten().find(|w| game_exist(&w)) {
-        let img = window.capture_image()?;
-        let img = DynamicImage::ImageRgba8(img)
-            .crop(0, 0, window.width(), (window.height() as f32 * 0.4) as u32)
-            .grayscale()
-            .to_rgb8();
+fn capture_screen(debug: bool, window: &Window) -> Result<RgbImage, Box<dyn Error>> {
+    let img = window.capture_image()?;
+    let img = DynamicImage::ImageRgba8(img)
+        .crop(0, 0, window.width(), (window.height() as f32 * 0.4) as u32)
+        .grayscale()
+        .to_rgb8();
 
-        if debug {
-            let _ = img.save("debug.png");
-        }
-        Ok(img)
-    } else {
-        Err("Game not found".into())
+    if debug {
+        let _ = img.save("debug.png");
     }
+    Ok(img)
 }
 
 pub fn encounter_process(
     engine: &OcrEngine,
     state: &mut EncounterState,
+    window: &Window,
 ) -> Result<(), Box<dyn Error>> {
     if state.mode == Mode::Init || state.mode == Mode::Pause {
         return Ok(());
@@ -178,7 +175,7 @@ pub fn encounter_process(
     let mut mode_detect: Vec<(Vec<String>, bool)> = vec![];
     if state.mode != Mode::Pause {
         for _ in 1..=ENCOUNTER_DETECT_FRAMES {
-            let buffer = capture_screen(state.debug)?;
+            let buffer = capture_screen(state.debug, window)?;
             let mons = get_mons(engine, buffer)?;
             mode_detect.push(mons);
             thread::sleep(Duration::from_millis(state.toggle.to_num()));
