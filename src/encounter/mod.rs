@@ -11,7 +11,7 @@ use xcap::Window;
 
 pub const APP_NAME: &str = "pokemmo";
 pub const JAVA: &str = "java";
-const ENCOUNTER_DETECT_FRAMES: i32 = 4;
+const ENCOUNTER_DETECT_FRAMES: i32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mode {

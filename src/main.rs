@@ -72,6 +72,10 @@ fn get_path_to_models() -> (String, String) {
     }
 }
 
+enum RunResult {
+    Exit,
+}
+
 #[derive()]
 pub struct App {
     exit: bool,
@@ -93,10 +97,14 @@ impl App {
         t
     }
 
-    fn run(&mut self, terminal: &mut tui::Tui, window: &Window) -> Result<(), Box<dyn Error>> {
+    fn run(
+        &mut self,
+        terminal: &mut tui::Tui,
+        window: &Window,
+    ) -> Result<RunResult, Box<dyn Error>> {
         loop {
             if self.exit {
-                break;
+                return Ok(RunResult::Exit);
             }
 
             terminal.draw(|frame| self.render_frame(frame))?;
@@ -107,7 +115,6 @@ impl App {
 
             self.process_keys()?;
         }
-        Ok(())
     }
 
     fn process_keys(&mut self) -> Result<(), Box<dyn Error>> {
@@ -206,7 +213,7 @@ impl App {
 
 fn try_to_restart(
     terminal: &mut ratatui::Terminal<ratatui::prelude::CrosstermBackend<std::io::Stdout>>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<RunResult, Box<dyn Error>> {
     terminal.clear()?;
     if let Some(new_window) = Window::all()?.iter().find(encounter::game_exist) {
         let mut new_app = App::new();
@@ -274,14 +281,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         terminal.clear()?;
 
         let mut app = App::default();
-        app.run(&mut terminal, window)?;
 
-        tui::restore()?;
-        terminal.clear()?;
+        if let Ok(RunResult::Exit) = app.run(&mut terminal, window) {
+            clear_terminal(terminal)?;
+            return Ok(());
+        }
+
+        clear_terminal(terminal)?;
         Ok(())
     } else {
         panic!("{} game not found", APP_NAME);
     }
+}
+
+fn clear_terminal(
+    mut terminal: ratatui::Terminal<ratatui::prelude::CrosstermBackend<std::io::Stdout>>,
+) -> Result<(), Box<dyn Error>> {
+    tui::restore()?;
+    terminal.clear()?;
+    Ok(())
 }
 
 fn debug_mode() -> Option<Result<(), Box<dyn Error>>> {
