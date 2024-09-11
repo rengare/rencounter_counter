@@ -133,11 +133,11 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
             lure_on = true;
         }
 
-        if line.contains("lv.") || line.contains("nv.") {
+        if line.contains("lv.") || line.contains("nv.") || line.contains("niv.") {
             line.split_whitespace()
                 .collect::<Vec<_>>()
                 .windows(2)
-                .filter(|w| (w[1] == "lv." || w[1] == "nv.") && w[0].len() > 1)
+                .filter(|w| (w[1] == "lv." || w[1] == "nv." || w[1] == "niv.") && w[0].len() > 1)
                 .for_each(|w| mons.push(w[0].to_string()));
         }
     }
