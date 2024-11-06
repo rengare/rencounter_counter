@@ -146,9 +146,16 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
 }
 
 fn capture_screen(debug: bool, window: &Window) -> Result<RgbImage, Box<dyn Error>> {
+    let factor = if window.height() >= 1080 { 0.4 } else { 0.3 };
+
     let img = window.capture_image()?;
     let img = DynamicImage::ImageRgba8(img)
-        .crop(0, 0, window.width(), (window.height() as f32 * 0.4) as u32)
+        .crop(
+            0,
+            0,
+            window.width(),
+            (window.height() as f32 * factor) as u32,
+        )
         .grayscale()
         .to_rgb8();
 
