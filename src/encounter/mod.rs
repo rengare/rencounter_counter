@@ -146,24 +146,27 @@ fn get_mons(engine: &OcrEngine, data: RgbImage) -> Result<(Vec<String>, bool), B
 }
 
 fn capture_screen(debug: bool, window: &Window) -> Result<RgbImage, Box<dyn Error>> {
-    let factor = if window.height() >= 1080 { 0.4 } else { 0.3 };
+    let get_image = |w: &Window| {
+        let factor = 0.5;
 
-    let img = window.capture_image()?;
-    let img = DynamicImage::ImageRgba8(img)
-        .crop(
-            0,
-            0,
-            window.width(),
-            (window.height() as f32 * factor) as u32,
-        )
-        .grayscale()
-        .to_rgb8();
+        let img = w.capture_image()?;
+        let img = DynamicImage::ImageRgba8(img)
+            .crop(0, 0, w.width(), (w.height() as f32 * factor) as u32)
+            .grayscale()
+            .to_rgb8();
 
-    if debug {
-        img.save("debug.png")?;
+        if debug {
+            img.save("debug.png")?;
+        }
+
+        Ok(img)
+    };
+
+    if let Some(w) = Window::all().unwrap().iter().find(game_exist) {
+        get_image(w)
+    } else {
+        get_image(window)
     }
-
-    Ok(img)
 }
 
 pub fn encounter_process(
