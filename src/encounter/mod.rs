@@ -87,9 +87,23 @@ impl Default for EncounterState {
 }
 
 pub fn game_exist(w: &&Window) -> bool {
-    let name = w.app_name().to_lowercase();
-    let title = w.title().to_lowercase();
+
+    let name = convert_cyrillic_string(w.app_name().to_lowercase().as_str());
+    let title = convert_cyrillic_string(w.title().to_lowercase().as_str());
+
     [APP_NAME, JAVA].contains(&name.as_str()) || [APP_NAME, JAVA].contains(&title.as_str())
+}
+
+// Weird edge case where the game title is in Cyrillic in some moments. Often or always when the user is passed the login screen.
+fn convert_cyrillic_string(input: &str) -> String {
+    input.chars().map(|c| match c {
+        'А' => 'A', 'В' => 'B', 'Е' => 'E', 'К' => 'K',
+        'М' => 'M', 'Н' => 'H', 'О' => 'O', 'Р' => 'P',
+        'С' => 'S', 'Т' => 'T', 'У' => 'Y', 'Х' => 'X',
+        'а' => 'a', 'е' => 'e', 'о' => 'o', 'р' => 'p',
+        'с' => 's', 'у' => 'y', 'х' => 'x', 'м' => 'm',
+        other => other, // Leave non-Cyrillic characters unchanged
+    }).collect()
 }
 
 pub fn get_current_working_dir() -> (String, String) {
