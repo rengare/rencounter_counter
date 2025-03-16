@@ -87,7 +87,6 @@ impl Default for EncounterState {
 }
 
 pub fn game_exist(w: &&Window) -> bool {
-
     let name = convert_cyrillic_string(w.app_name().to_lowercase().as_str());
     let title = convert_cyrillic_string(w.title().to_lowercase().as_str());
 
