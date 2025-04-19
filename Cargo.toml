@@ -23,3 +23,4 @@ serde = { version = "1.0.199", features = ["derive"] }
 ratatui = "0.28.1"
 crossterm = "0.28.1"
 xcap = "0.0.13"
+slint = "1.10.0"
